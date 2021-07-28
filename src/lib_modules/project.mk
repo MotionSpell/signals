@@ -14,5 +14,5 @@ $(BIN)/%.smd: CFLAGS+=$(shell test -z "$(PKGS)" || $(SRC)/../scripts/pkg-config 
 $(BIN)/%.smd: LDFLAGS+=$(shell test -z "$(PKGS)" || $(SRC)/../scripts/pkg-config $(PKGS) --libs)
 
 $(BIN)/%.smd: $(LIB_MODULES_SRCS:%=$(BIN)/%.o) $(LIB_UTILS_SRCS:%=$(BIN)/%.o)
-	$(CXX) $(CFLAGS) -pthread -shared -Wl,--no-undefined -o "$@" $^ $(LDFLAGS)
+	$(CXX) $(CFLAGS) -pthread -shared -o "$@" $^ $(LDFLAGS)
 
