@@ -361,21 +361,21 @@ unittest("mpeg_dash_input: switch representations in adaption set with URL in re
 <MPD>
   <Period>
     <AdaptationSet>
-      <SegmentTemplate
-        duration="10"/>
       <Representation
             id="low"
+            mimeType="audio/mp4">
+        <SegmentTemplate
             initialization="low/init.mp4"
             media="low/$Number$.m4s"
-            mimeType="audio/mp4">
-        <SegmentTemplate startNumber="5" />
+            startNumber="5" />
       </Representation>
       <Representation
             id="high"
+            mimeType="audio/mp4">
+        <SegmentTemplate
             initialization="high/init.mp4"
             media="high/$Number$.m4s"
-            mimeType="audio/mp4">
-        <SegmentTemplate startNumber="5" />
+            startNumber="5" />
       </Representation>
     </AdaptationSet>
   </Period>
