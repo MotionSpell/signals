@@ -259,8 +259,14 @@ void MPEG_DASH_Input::enableStream(int asIdx, int repIdx) {
 	if (repIdx < 0 || repIdx >= (int)m_streams[asIdx]->rep->set(mpd.get()).representations.size())
 		throw error("enableStream(): wrong representation index");
 
+	fprintf(stderr, "xxxjack enableStream(%d, %d)\n", asIdx, repIdx);
+	fflush(stderr);
 	m_streams[asIdx]->executor->post([this, asIdx, repIdx]() {
+		fprintf(stderr, "xxxjack enableStream(%d, %d) old rep=0x%llx RepresentationID=%s\n", asIdx, repIdx, (uint64_t)m_streams[asIdx]->rep, m_streams[asIdx]->rep->id.c_str());
+		fflush(stderr);
 		m_streams[asIdx]->rep = &m_streams[asIdx]->rep->set(mpd.get()).representations[repIdx];
+		fprintf(stderr, "xxxjack enableStream(%d, %d) new rep=0x%llx RepresentationID=%s\n", asIdx, repIdx, (uint64_t)m_streams[asIdx]->rep, m_streams[asIdx]->rep->id.c_str());
+		fflush(stderr);
 	});
 }
 

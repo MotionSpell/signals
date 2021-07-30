@@ -305,8 +305,8 @@ unittest("mpeg_dash_input: number of outputs is the number of adaptation sets wi
 }
 
 unittest("mpeg_dash_input: switch representations in adaption set") {
-	//TODO: set different start numbers for each representation
-	static auto const MPD = R"|(
+    //TODO: set different start numbers for each representation
+    static auto const MPD = R"|(
 <?xml version="1.0"?>
 <MPD>
   <Period>
@@ -324,34 +324,90 @@ unittest("mpeg_dash_input: switch representations in adaption set") {
     </AdaptationSet>
   </Period>
 </MPD>)|";
-	LocalFilesystem source;
-	source.resources["main/manifest.mpd"] = MPD;
-	source.resources["main/low/init.mp4"] = "a";
-	source.resources["main/high/init.mp4"] = "a";
+    LocalFilesystem source;
+    source.resources["main/manifest.mpd"] = MPD;
+    source.resources["main/low/init.mp4"] = "a";
+    source.resources["main/high/init.mp4"] = "a";
 
-	auto dash = createModule<MPEG_DASH_Input>(&NullHost, &source, "main/manifest.mpd"); //main/manifest.mpd
-	ASSERT_EQUALS(1, dash->getNumAdaptationSets());
-	ASSERT_EQUALS(2, dash->getNumRepresentationsInAdaptationSet(0));
+    auto dash = createModule<MPEG_DASH_Input>(&NullHost, &source, "main/manifest.mpd"); //main/manifest.mpd
+    ASSERT_EQUALS(1, dash->getNumAdaptationSets());
+    ASSERT_EQUALS(2, dash->getNumRepresentationsInAdaptationSet(0));
 
-	dash->process();          //main/low/init.mp4
-	dash->process();          //main/low/5.m4s
-	dash->enableStream(0, 1); //TODO: main/high/init.mp4
-	dash->process();          //main/high/6.m4s
-	dash->enableStream(0, 0); //nothing
-	dash->process();          //main/low/7.m4s
+    dash->process();          //main/low/init.mp4
+    dash->process();          //main/low/5.m4s
+    dash->enableStream(0, 1); //TODO: main/high/init.mp4
+    dash->process();          //main/high/6.m4s
+    dash->enableStream(0, 0); //nothing
+    dash->process();          //main/low/7.m4s
 
-	dash = nullptr;
+    dash = nullptr;
 
-	ASSERT_EQUALS(
-	std::vector<std::string>( {
-		"main/manifest.mpd",
-		"main/low/init.mp4",
-		"main/low/5.m4s",
-		//"main/high/init.mp4", //TODO
-		"main/high/6.m4s",
-		"main/low/7.m4s",
-	}),
-	source.requests);
+    ASSERT_EQUALS(
+    std::vector<std::string>( {
+        "main/manifest.mpd",
+        "main/low/init.mp4",
+        "main/low/5.m4s",
+        //"main/high/init.mp4", //TODO
+        "main/high/6.m4s",
+        "main/low/7.m4s",
+    }),
+    source.requests);
+}
+
+unittest("mpeg_dash_input: switch representations in adaption set with URL in representation") {
+    //TODO: set different start numbers for each representation
+    static auto const MPD = R"|(
+<?xml version="1.0"?>
+<MPD>
+  <Period>
+    <AdaptationSet>
+      <SegmentTemplate
+        duration="10"/>
+      <Representation
+            id="low"
+            initialization="low/init.mp4"
+            media="low/$Number$.m4s"
+            mimeType="audio/mp4">
+        <SegmentTemplate startNumber="5" />
+      </Representation>
+      <Representation
+            id="high"
+            initialization="high/init.mp4"
+            media="high/$Number$.m4s"
+            mimeType="audio/mp4">
+        <SegmentTemplate startNumber="5" />
+      </Representation>
+    </AdaptationSet>
+  </Period>
+</MPD>)|";
+    LocalFilesystem source;
+    source.resources["main/manifest.mpd"] = MPD;
+    source.resources["main/low/init.mp4"] = "a";
+    source.resources["main/high/init.mp4"] = "a";
+
+    auto dash = createModule<MPEG_DASH_Input>(&NullHost, &source, "main/manifest.mpd"); //main/manifest.mpd
+    ASSERT_EQUALS(1, dash->getNumAdaptationSets());
+    ASSERT_EQUALS(2, dash->getNumRepresentationsInAdaptationSet(0));
+
+    dash->process();          //main/low/init.mp4
+    dash->process();          //main/low/5.m4s
+    dash->enableStream(0, 1); //TODO: main/high/init.mp4
+    dash->process();          //main/high/6.m4s
+    dash->enableStream(0, 0); //nothing
+    dash->process();          //main/low/7.m4s
+
+    dash = nullptr;
+
+    ASSERT_EQUALS(
+    std::vector<std::string>( {
+        "main/manifest.mpd",
+        "main/low/init.mp4",
+        "main/low/5.m4s",
+        //"main/high/init.mp4", //TODO
+        "main/high/6.m4s",
+        "main/low/7.m4s",
+    }),
+    source.requests);
 }
 
 unittest("mpeg_dash_input: get adaptation set SRD descriptor") {
