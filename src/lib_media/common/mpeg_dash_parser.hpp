@@ -5,8 +5,24 @@
 #include <string>
 #include <vector>
 
+struct SegmentTemplate {
+	bool active = false;
+	std::string initialization;
+	std::string media;
+	int startNumber = 0;
+	int duration = 0;
+	int timescale = 1;
+};
+
 struct DashMpd;
-struct AdaptationSet;
+struct Representation;
+
+struct AdaptationSet {
+	std::string contentType;
+	std::string srd;
+	SegmentTemplate segTpl;
+	std::vector<Representation> representations;
+};
 
 struct Representation {
 	const AdaptationSet& set(DashMpd const * const mpd) const;
@@ -14,17 +30,13 @@ struct Representation {
 	std::string codecs;
 	std::string mimeType;
 	int setIdx = -1;
-};
 
-struct AdaptationSet {
-	std::string media;
-	int startNumber = 0;
-	int duration = 0;
-	int timescale = 1;
-	std::string initialization;
-	std::string contentType;
-	std::string srd;
-	std::vector<Representation> representations;
+	std::string initialization(DashMpd const * const mpd) const;
+	std::string media(DashMpd const * const mpd) const;
+	int startNumber(DashMpd const * const mpd) const;
+	int duration(DashMpd const * const mpd) const;
+	int timescale(DashMpd const * const mpd) const;
+	SegmentTemplate segTpl;
 };
 
 struct DashMpd {
