@@ -5,6 +5,7 @@ CFLAGS:=$(CFLAGS)
 CFLAGS+=-std=c++14
 CFLAGS+=-Wall -Wextra -Werror
 CFLAGS+=-fvisibility=hidden -fvisibility-inlines-hidden
+CFLAGS+=-DSIGNALS_SET_THREAD_NAME
 
 BIN?=bin
 SRC?=src

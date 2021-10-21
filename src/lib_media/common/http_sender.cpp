@@ -115,6 +115,9 @@ struct CurlHttpSender : HttpSender {
 		}
 
 		void threadProc() {
+#ifdef SIGNALS_SET_THREAD_NAME
+            pthread_setname_np("signals::CurlHttpSender");
+#endif
 			auto curl = createCurl(m_cfg.url, m_cfg.request);
 
 			curl_easy_setopt(curl.get(), CURLOPT_USERAGENT, m_cfg.userAgent.c_str());

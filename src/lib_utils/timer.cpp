@@ -22,6 +22,9 @@ void SystemTimer::scheduleIn(std::function<void()>&& task, Fraction delay) {
 }
 
 void SystemTimer::timerThreadProc() {
+#ifdef SIGNALS_SET_THREAD_NAME
+    pthread_setname_np("signals::SystemTimer");
+#endif
 	while(1) {
 		std::function<void()> task;
 		{

@@ -49,6 +49,9 @@ struct BinaryBlockingExecutor {
 
 	private:
 		void threadProc() {
+#ifdef SIGNALS_SET_THREAD_NAME
+            pthread_setname_np("signals::MPEG_DASH_InputStream");
+#endif
 			try {
 				while (auto f = q.pop()) {
 					{

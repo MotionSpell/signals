@@ -364,6 +364,9 @@ struct LibavDemux : Module {
 	}
 
 	void inputThread() {
+#ifdef SIGNALS_SET_THREAD_NAME
+        pthread_setname_np("signals::LibavDemux");
+#endif
 		if(highPriority && !setHighThreadPriority())
 			m_host->log(Warning, format("Couldn't change reception thread priority to realtime.").c_str());
 

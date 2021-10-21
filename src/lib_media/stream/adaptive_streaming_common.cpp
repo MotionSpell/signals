@@ -176,6 +176,9 @@ std::shared_ptr<DataBase> AdaptiveStreamingCommon::getPresignalledData(uint64_t 
 }
 
 void AdaptiveStreamingCommon::threadProc() {
+#ifdef SIGNALS_SET_THREAD_NAME
+    pthread_setname_np("signals::AdaptiveStreamingCommon");
+#endif
 
 	auto const numInputs = getNumInputs() - 1;
 	for (int i = 0; i < numInputs; ++i) {
