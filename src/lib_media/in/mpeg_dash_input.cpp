@@ -49,6 +49,9 @@ struct BinaryBlockingExecutor {
 
 	private:
 		void threadProc() {
+#ifdef SIGNALS_SET_THREAD_NAME
+            pthread_setname_np("signals::MPEG_DASH_InputStream");
+#endif
 			try {
 				while (auto f = q.pop()) {
 					{
@@ -132,13 +135,13 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 
 			auto out = addOutput();
 			out->setMetadata(meta);
-			auto stream = make_unique<Stream>(out, &rep, Fraction(set.duration, set.timescale), filePullerFactory->create(), eptr);
+			auto stream = make_unique<Stream>(out, &rep, Fraction(rep.duration(mpd.get()), rep.timescale(mpd.get())), filePullerFactory->create(), eptr);
 			m_streams.push_back(move(stream));
 		}
 	}
 
 	for(auto& stream : m_streams) {
-		stream->currNumber = stream->rep->set(mpd.get()).startNumber;
+		stream->currNumber = stream->rep->startNumber(mpd.get());
 		if(mpd->dynamic) {
 			auto now = mpd->publishTime;
 			if(!mpd->publishTime)
@@ -149,7 +152,7 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 
 			stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
 			// HACK: add one segment latency
-			stream->currNumber = std::max<int64_t>(stream->currNumber-2, stream->rep->set(mpd.get()).startNumber);
+			stream->currNumber = std::max<int64_t>(stream->currNumber-2, stream->rep->startNumber(mpd.get()));
 		}
 	}
 }
@@ -170,7 +173,7 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 	}
 
 	if (mpd->periodDuration) {
-		if (stream->segmentDuration * (stream->currNumber - rep->set(mpd.get()).startNumber) >= mpd->periodDuration) {
+		if (stream->segmentDuration * (stream->currNumber - rep->startNumber(mpd.get())) >= mpd->periodDuration) {
 			m_host->log(Info, "End of period");
 			m_host->activate(false);
 			return;
@@ -187,9 +190,9 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		if (stream->initializationChunkSent) {
 			vars["Number"] = format("%s", stream->currNumber);
 			stream->currNumber++;
-			url = m_mpdDirname + "/" + expandVars(rep->set(mpd.get()).media, vars);
+			url = m_mpdDirname + "/" + expandVars(rep->media(mpd.get()), vars);
 		} else {
-			url = m_mpdDirname + "/" + expandVars(rep->set(mpd.get()).initialization, vars);
+			url = m_mpdDirname + "/" + expandVars(rep->initialization(mpd.get()), vars);
 		}
 	}
 
@@ -208,7 +211,7 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 	stream->source->wget(url.c_str(), onBuffer);
 	if (empty) {
 		if (mpd->dynamic) {
-			stream->currNumber = std::max<int64_t>(stream->currNumber - 1, rep->set(mpd.get()).startNumber); // too early, retry
+			stream->currNumber = std::max<int64_t>(stream->currNumber - 1, rep->startNumber(mpd.get())); // too early, retry
 			return;
 		}
 		m_host->log(Error, format("can't download file: '%s'", url).c_str());
@@ -259,14 +262,10 @@ void MPEG_DASH_Input::enableStream(int asIdx, int repIdx) {
 	if (repIdx < 0 || repIdx >= (int)m_streams[asIdx]->rep->set(mpd.get()).representations.size())
 		throw error("enableStream(): wrong representation index");
 
-	fprintf(stderr, "xxxjack enableStream(%d, %d)\n", asIdx, repIdx);
-	fflush(stderr);
 	m_streams[asIdx]->executor->post([this, asIdx, repIdx]() {
-		fprintf(stderr, "xxxjack enableStream(%d, %d) old rep=0x%llx RepresentationID=%s\n", asIdx, repIdx, (uint64_t)m_streams[asIdx]->rep, m_streams[asIdx]->rep->id.c_str());
-		fflush(stderr);
-		m_streams[asIdx]->rep = &m_streams[asIdx]->rep->set(mpd.get()).representations[repIdx];
-		fprintf(stderr, "xxxjack enableStream(%d, %d) new rep=0x%llx RepresentationID=%s\n", asIdx, repIdx, (uint64_t)m_streams[asIdx]->rep, m_streams[asIdx]->rep->id.c_str());
-		fflush(stderr);
+		auto &newRep = m_streams[asIdx]->rep->set(mpd.get()).representations[repIdx];
+		m_streams[asIdx]->currNumber += newRep.startNumber(mpd.get()) - m_streams[asIdx]->rep->startNumber(mpd.get());
+		m_streams[asIdx]->rep = &newRep;
 	});
 }
 

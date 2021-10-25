@@ -35,6 +35,9 @@ class ThreadPool {
 		ThreadPool(const ThreadPool&) = delete;
 
 		void run() {
+#ifdef SIGNALS_SET_THREAD_NAME
+            pthread_setname_np("signals::ThreadPool");
+#endif
 			while (auto task = workQueue.pop()) {
 				try {
 					task();

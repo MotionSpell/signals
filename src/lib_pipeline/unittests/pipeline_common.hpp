@@ -114,6 +114,9 @@ class ThreadedDualInput : public Modules::Module {
 		}
 
 		void threadProc() {
+#ifdef SIGNALS_SET_THREAD_NAME
+            pthread_setname_np("signals::ThreadedDualInput");
+#endif
 			numCalls++;
 
 			if (!done) {
