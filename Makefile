@@ -3,7 +3,8 @@ BOMB_TIME_IN_DAYS?=75.0
 
 CFLAGS:=$(CFLAGS)
 CFLAGS+=-std=c++14
-CFLAGS+=-Wall -Wextra -Werror
+#CFLAGS+=-Wall -Wextra -Werror # xxxjack Werror gives av_init_packet deprecation warning which becomes error
+CFLAGS+=-Wall -Wextra
 CFLAGS+=-fvisibility=hidden -fvisibility-inlines-hidden
 CFLAGS+=-DSIGNALS_SET_THREAD_NAME
 
