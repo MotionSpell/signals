@@ -83,6 +83,7 @@ struct MPEG_DASH_Input::Stream {
 	OutputDefault* out;
 	Representation const * rep;
 	bool initializationChunkSent = false;
+    bool anySegmentDataReceived = false;
 	int64_t currNumber = 0;
 	Fraction segmentDuration;
 	unique_ptr<IFilePuller> source;
@@ -215,12 +216,16 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 	stream->source->wget(url.c_str(), onBuffer);
 	if (empty) {
 		if (mpd->dynamic) {
-			stream->currNumber = std::max<int64_t>(stream->currNumber - 1, rep->startNumber(mpd.get())); // too early, retry
+            int leeway = 1;
+            if (!stream->anySegmentDataReceived) leeway += 1;
+			stream->currNumber = std::max<int64_t>(stream->currNumber - leeway, rep->startNumber(mpd.get())); // too early, retry
 			return;
 		}
 		m_host->log(Error, format("can't download file: '%s'", url).c_str());
 		m_host->activate(false);
-	}
+    } else {
+        stream->anySegmentDataReceived = stream->initializationChunkSent;
+    }
 
 	stream->initializationChunkSent = true;
 }
