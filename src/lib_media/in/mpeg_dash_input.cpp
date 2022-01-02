@@ -144,20 +144,31 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 	for(auto& stream : m_streams) {
 		stream->currNumber = stream->rep->startNumber(mpd.get());
 		if(mpd->dynamic) {
-			auto now = mpd->publishTime;
-			if(!mpd->publishTime)
-				now = (int64_t)getUTC();
+            if (mpd->mediaPresentationDuration) {
+                if (stream->segmentDuration.num == 0)
+                    throw runtime_error("No duration for stream");
+                // Note that mediaPresentationDuration is in seconds,
+                // so this will give a value that is too low (at most one second).
+                stream->currNumber += int64_t((stream->segmentDuration.inverse() * mpd->mediaPresentationDuration));
+                int leeway = 1;
+                stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
 
-			if (stream->segmentDuration.num == 0)
-				throw runtime_error("No duration for stream");
+            } else {
+                auto now = mpd->publishTime;
+                if (!mpd->publishTime)
+                    now = (int64_t)getUTC();
 
-			stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
-			// HACK: add one segment latency.
-            // HACK modified by jack: also add at least a second, to cater for the times
-            // in the MPD to have a 1-second resolution.
-            int leeway = 2;
-            leeway += int(stream->segmentDuration.inverse());
-			stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
+                if (stream->segmentDuration.num == 0)
+                    throw runtime_error("No duration for stream");
+
+                stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
+                // HACK: add one segment latency.
+                // HACK modified by jack: also add at least a second, to cater for the times
+                // in the MPD to have a 1-second resolution.
+                int leeway = 2;
+                leeway += int(stream->segmentDuration.inverse());
+                stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
+            }
 		}
 	}
 }
