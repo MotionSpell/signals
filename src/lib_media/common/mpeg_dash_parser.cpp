@@ -63,8 +63,11 @@ unique_ptr<DashMpd> parseMpd(span<const char> text) {
 			if(!attr["publishTime"].empty())
 				mpd->publishTime = parseDate(attr["publishTime"]);
 
-			if(!attr["minimumUpdatePeriod"].empty())
-				mpd->minUpdatePeriod = parseIso8601Period(attr["minimumUpdatePeriod"]);
+            if(!attr["mediaPresentationDuration"].empty())
+                mpd->mediaPresentationDuration = parseIso8601Period(attr["mediaPresentationDuration"]);
+
+            if(!attr["minimumUpdatePeriod"].empty())
+                mpd->minUpdatePeriod = parseIso8601Period(attr["minimumUpdatePeriod"]);
 		} else if(name == "SegmentTemplate") {
 			auto getSegTpl = [&]() -> SegmentTemplate& {
 				auto &set = mpd->sets.back();
