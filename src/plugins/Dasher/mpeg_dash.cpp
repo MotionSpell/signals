@@ -219,13 +219,13 @@ struct AdaptiveStreamer : ModuleDynI {
 			return (minIncompletSegDur == std::numeric_limits<uint64_t>::max()) || (qualities[repIdx].curSegDurIn180k > minIncompletSegDur && (qualities[repIdx].getMeta() && qualities[repIdx].getMeta()->EOS));
 		}
 
-		void ensureStartTime() {
+		void ensureStartTime(int repIdx=0) {
 			if (startTimeInMs == -2)
-				startTimeInMs = clockToTimescale(qualities[0].lastData->get<PresentationTime>().time, DASH_TIMESCALE);
+				startTimeInMs = clockToTimescale(qualities[repIdx].lastData->get<PresentationTime>().time, DASH_TIMESCALE);
 		}
 
 		void sendLocalData(Data currData, int repIdx, uint64_t size, bool EOS) {
-			ensureStartTime();
+			ensureStartTime(repIdx);
 			auto out = getPresignalledData(size, currData, EOS);
 			if (out) {
 				auto const &meta = qualities[repIdx].getMeta();
