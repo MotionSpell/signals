@@ -77,6 +77,7 @@ unittest("pipeline: exceptions are propagated") {
 //- multithreaded
 //- non-source modules (code path is different and does not give control to the app/Exception cbk),
 //- different tests with return true/false in registerErrorCallback()
+//- when one source is stopped, what happens to the other sources? can user call exitSync() from the error callback?
 
 unittest("pipeline: pipeline with split (no join)") {
 	Pipeline p;
