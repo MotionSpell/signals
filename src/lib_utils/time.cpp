@@ -137,7 +137,7 @@ Fraction parseDate(std::string s) {
 	date.tm_min = minute;
 	date.tm_sec = (int)second;
 
-	return Fraction((int64_t)pTimegm(&date) * 1000 + (int64_t)((second - (int)second) * 1000), 1000);
+	return Fraction((int64_t)pTimegm(&date) * 1000 + (int64_t)(1000 * second - 1000 * (int)second), 1000);
 }
 
 struct UtcClock : IUtcClock {
