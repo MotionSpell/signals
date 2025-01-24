@@ -20,6 +20,7 @@
         "libjpeg-turbo",
         "freetype",
         "nghttp2",
-        "curl"
+        "curl",
+        "zlib"
         ]
 }
