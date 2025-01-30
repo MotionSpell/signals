@@ -72,12 +72,12 @@ jobs:
     - name: Configure CMake
       run: |
         cd ${{ env.BUILD_DIR }} && \
-        cmake -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=${{ env.BUILD_DIR }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ env.BUILD_DIR }}/installed -DVCPKG_TARGET_TRIPLET=x64-linux-dynamic .
+        cmake --preset linux-production
 
     - name: Build the project
       run: |
         cd ${{ env.BUILD_DIR }} && \
-        cmake --build build --config Release
+        cmake --build build --preset linux-production
 
     - name: Run tests
       run: |
