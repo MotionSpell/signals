@@ -46,7 +46,8 @@ jobs:
         gcc \
         g++ \
         make \
-        libtool
+        libtool \
+        libtool-bin
 
     - name: Install CMake and Ninja
       run: |
@@ -70,12 +71,12 @@ jobs:
     - name: Configure CMake
       run: |
         cd ${{ env.BUILD_DIR }} && \
-        cmake --preset linux-production
+        cmake -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=${{ env.BUILD_DIR }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ env.BUILD_DIR }}/installed -DVCPKG_TARGET_TRIPLET=x64-linux-dynamic .
 
     - name: Build the project
       run: |
         cd ${{ env.BUILD_DIR }} && \
-        cmake --build build --preset linux-production
+        cmake --build build --config Release
 
     - name: Run tests
       run: |
