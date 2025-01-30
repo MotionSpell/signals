@@ -3,10 +3,10 @@ name: Linux Build
 on:
   push:
     branches:
-      - main
+      - vcpkg-cmake
   pull_request:
     branches:
-      - main
+      - vcpkg-cmake
 
 jobs:
   build:
@@ -50,12 +50,8 @@ jobs:
 
     - name: Install CMake and Ninja
       run: |
-        curl -L https://github.com/Kitware/CMake/releases/download/v3.31.5/cmake-3.31.5-linux-x86_64.sh -o cmake-install.sh
-        chmod +x cmake-install.sh
-        sudo ./cmake-install.sh --skip-license --prefix=/usr/local
-        curl -L https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip -o ninja-linux.zip
-        unzip ninja-linux.zip -d /usr/local/bin
-        rm cmake-install.sh ninja-linux.zip
+        chmod +x ./docker/install_cmake.sh && \
+        ./docker/install_cmake.sh /opt/ninja /opt/cmake
 
     - name: Clone the Signals repository
       run: |
