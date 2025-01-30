@@ -56,12 +56,12 @@ jobs:
     - name: Configure CMake
       working-directory: ${{ env.BUILD_DIR }}
       run: |
-        cmake .. --preset mingw-production
+        cmake  --preset mingw-production
       shell: bash
 
     - name: Build
       working-directory: ${{ env.BUILD_DIR }}
-      run: cmake --build --preset mingw-production
+      run: cmake --build build --preset mingw-production
       shell: bash
 
     - name: Test
