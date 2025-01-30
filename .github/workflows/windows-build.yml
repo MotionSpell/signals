@@ -37,8 +37,11 @@ jobs:
           mingw-w64-x86_64-nasm
           mingw-w64-x86_64-yasm
           mingw-w64-x86_64-autotools
+          mingw-w64-x86_64-gcc
           git
           make
+          curl
+        msystem: MINGW64  
 
     - name: Set MSYS2 path
       run: |
@@ -56,7 +59,7 @@ jobs:
     - name: Configure CMake
       working-directory: ${{ env.BUILD_DIR }}
       run: |
-        cmake  --preset mingw-production
+        cmake --preset mingw-production
       shell: bash
 
     - name: Build
