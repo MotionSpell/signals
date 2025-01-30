@@ -1,0 +1,88 @@
+name: Linux Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up environment variables
+      run: |
+        echo "SIGNALS_REPO=https://github.com/MotionSpell/signals.git" >> $GITHUB_ENV
+        echo "BUILD_DIR=/signals" >> $GITHUB_ENV
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y --no-install-recommends \
+        tzdata \
+        zip \
+        unzip \
+        curl \
+        tar \
+        git \
+        ca-certificates \
+        linux-libc-dev \
+        build-essential \
+        pkg-config \
+        yasm \
+        nasm \
+        autoconf \
+        automake \
+        autoconf-archive \
+        autotools-dev \
+        python3 \
+        python3-jinja2 \
+        gcc \
+        g++ \
+        make \
+        libtool
+
+    - name: Install CMake and Ninja
+      run: |
+        curl -L https://github.com/Kitware/CMake/releases/download/v3.31.5/cmake-3.31.5-linux-x86_64.sh -o cmake-install.sh
+        chmod +x cmake-install.sh
+        sudo ./cmake-install.sh --skip-license --prefix=/usr/local
+        curl -L https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip -o ninja-linux.zip
+        unzip ninja-linux.zip -d /usr/local/bin
+        rm cmake-install.sh ninja-linux.zip
+
+    - name: Clone the Signals repository
+      run: |
+        git clone --recurse-submodules -b vcpkg-cmake ${{ env.SIGNALS_REPO }} ${{ env.BUILD_DIR }}
+
+    - name: Update submodules
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        git submodule update --remote vcpkg
+
+    - name: Fix for libcrypto build
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y libtool && \
+        libtoolize --copy --force
+
+    - name: Configure CMake
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        cmake --preset linux-production
+
+    - name: Build the project
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        cmake --build build --preset linux-production
+
+    - name: Run tests
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        ctest --output-on-failure
