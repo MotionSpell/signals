@@ -17,12 +17,13 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
+        fetch-depth: 0
 
     - name: Set up environment variables
       run: |
-        echo "BUILD_DIR=${{ github.workspace }}" >> $GITHUB_ENV
-        echo "ACTIONS_RUNNER_DEBUG=true" >> $GITHUB_ENV
-        echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
+        echo "BUILD_DIR=${{ github.workspace }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "VCPKG_DEFAULT_TRIPLET=x64-mingw-dynamic" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      shell: pwsh
 
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
@@ -30,47 +31,51 @@ jobs:
         update: true
         install: >-
           mingw-w64-x86_64-toolchain
-          make
-          git
-          cmake
-          ninja
-          unzip
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-ninja
+          mingw-w64-x86_64-pkg-config
           mingw-w64-x86_64-nasm
           mingw-w64-x86_64-yasm
+          mingw-w64-x86_64-autotools
+          git
+          make
 
-    - name: Set environment variables for MSYS2
+    - name: Set MSYS2 path
       run: |
-        echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
-        echo "C:\msys64\usr\bin" >> $GITHUB_PATH
-        echo "MSYSTEM=MINGW64" >> $GITHUB_ENV
-      shell: bash
+        echo "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "MSYSTEM=MINGW64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      shell: pwsh
 
-    - name: Initialize vcpkg submodule
-      run: git submodule update --init --recursive
-      shell: bash
-
-    - name: Bootstrap vcpkg
-      run: vcpkg/bootstrap-vcpkg.bat
+    - name: Setup vcpkg
+      run: |
+        git submodule update --init --recursive
+        .\vcpkg\bootstrap-vcpkg.bat
       shell: cmd
 
-    - name: Update submodules
-      run: git submodule update --remote vcpkg
-      shell: bash
-
-
     - name: Configure CMake
-      run: cmake --preset mingw-production
+      run: |
+        mkdir build
+        cd build
+        cmake .. --preset mingw-production -DCMAKE_BUILD_TYPE=Release
       shell: bash
 
-    - name: Build the project
-      run: cmake --build --preset mingw-production
+    - name: Build
+      working-directory: build
+      run: cmake --build . --config Release
       shell: bash
 
-    - name: Run tests
-      run: ctest --output-on-failure
+    - name: Test
+      working-directory: build
+      run: ctest -C Release --output-on-failure
       shell: bash
 
-    - name: Show ffmpeg build logs on failure
+    - name: Upload logs on failure
       if: failure()
-      run: cat vcpkg/buildtrees/ffmpeg/build-x64-mingw-dynamic-rel-err.log
-      shell: bash
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-logs
+        path: |
+          build/CMakeFiles/CMakeOutput.log
+          build/CMakeFiles/CMakeError.log
+          vcpkg/buildtrees/**/*.log
