@@ -35,6 +35,8 @@ jobs:
           cmake
           ninja
           unzip
+          mingw-w64-x86_64-nasm
+          mingw-w64-x86_64-yasm
 
     - name: Set environment variables for MSYS2
       run: |
@@ -55,6 +57,10 @@ jobs:
       run: git submodule update --remote vcpkg
       shell: bash
 
+    - name: Clean previous ffmpeg build (if needed)
+      run: rm -rf vcpkg/buildtrees/ffmpeg
+      shell: bash
+
     - name: Configure CMake
       run: cmake --preset mingw-production
       shell: bash
@@ -65,4 +71,9 @@ jobs:
 
     - name: Run tests
       run: ctest --output-on-failure
+      shell: bash
+
+    - name: Show ffmpeg build logs on failure
+      if: failure()
+      run: cat vcpkg/buildtrees/ffmpeg/build-x64-mingw-dynamic-rel-err.log
       shell: bash
