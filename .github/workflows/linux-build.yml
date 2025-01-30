@@ -53,10 +53,13 @@ jobs:
         chmod +x ./docker/install_cmake.sh && \
         ./docker/install_cmake.sh /opt/ninja /opt/cmake
 
-    - name: Update submodules
+    - name: Initialize vcpkg submodule
       run: |
-        cd ${{ env.BUILD_DIR }} && \
-        git submodule update --remote vcpkg
+        git submodule update --init --recursive
+
+    - name: Bootstrap vcpkg
+      run: |
+        ./vcpkg/bootstrap-vcpkg.sh
 
     - name: Fix for libcrypto build
       run: |
