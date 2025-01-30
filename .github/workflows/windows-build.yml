@@ -23,52 +23,37 @@ jobs:
         echo "ACTIONS_RUNNER_DEBUG=true" >> $env:GITHUB_ENV
         echo "ACTIONS_STEP_DEBUG=true" >> $env:GITHUB_ENV
 
-    - name: Download MSYS2 installer
-      run: |
-        Write-Host "Downloading MSYS2 installer..."
-        Invoke-WebRequest -Uri https://github.com/msys2/msys2-installer/releases/download/2024-12-08/msys2-x86_64-20241208.exe -OutFile msys2-installer.exe
-
-    - name: Install MSYS2
-      run: |
-        Write-Host "Starting MSYS2 installation..."
-        $process = Start-Process msys2-installer.exe -ArgumentList '/S' -PassThru -Wait
-        Write-Host "MSYS2 installation completed with exit code: $($process.ExitCode)"
-        Remove-Item msys2-installer.exe -Force
-
-    - name: Update MSYS2 and install dependencies
-      run: |
-        C:\msys64\usr\bin\bash.exe -l -c "echo -e '[options]\nCheckSpace\nSigLevel = Never\nServer = http://mirror.msys2.org/msys/\$repo/\$arch' > /etc/pacman.d/mirrorlist"
-        C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --noconfirm --verbose"
-        C:\msys64\usr\bin\bash.exe -l -c "pacman -S --noconfirm --verbose mingw-w64-x86_64-toolchain make git cmake"
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          mingw-w64-x86_64-toolchain
+          make
+          git
+          cmake
 
     - name: Set environment variables for MSYS2
       run: |
         echo "C:\msys64\mingw64\bin" >> $env:PATH
 
     - name: Initialize vcpkg submodule
-      run: |
-        C:\msys64\usr\bin\bash.exe -l -c "git submodule update --init --recursive"
+      run: msys2 -c "git submodule update --init --recursive"
 
     - name: Bootstrap vcpkg
-      run: |
-        C:\msys64\usr\bin\bash.exe -l -c "./vcpkg/bootstrap-vcpkg.sh"
+      run: msys2 -c "./vcpkg/bootstrap-vcpkg.sh"
 
     - name: Clone the Signals repository
-      run: |
-        C:\msys64\usr\bin\bash.exe -l -c "git clone --recurse-submodules -b vcpkg-cmake $env:SIGNALS_REPO $env:BUILD_DIR"
+      run: msys2 -c "git clone --recurse-submodules -b vcpkg-cmake $env:SIGNALS_REPO $env:BUILD_DIR"
 
     - name: Update submodules
-      run: |
-        C:\msys64\usr\bin\bash.exe -l -c "cd $env:BUILD_DIR && git submodule update --remote vcpkg"
+      run: msys2 -c "cd $env:BUILD_DIR && git submodule update --remote vcpkg"
 
     - name: Configure CMake
-      run: |
-        C:\msys64\usr\bin\bash.exe -l -c "cd $env:BUILD_DIR && cmake --preset mingw-production"
+      run: msys2 -c "cd $env:BUILD_DIR && cmake --preset mingw-production"
 
     - name: Build the project
-      run: |
-        C:\msys64\usr\bin\bash.exe -l -c "cd $env:BUILD_DIR && cmake --build build --preset mingw-production"
+      run: msys2 -c "cd $env:BUILD_DIR && cmake --build build --preset mingw-production"
 
     - name: Run tests
-      run: |
-        C:\msys64\usr\bin\bash.exe -l -c "cd $env:BUILD_DIR && ctest --output-on-failure"
+      run: msys2 -c "cd $env:BUILD_DIR && ctest --output-on-failure"
