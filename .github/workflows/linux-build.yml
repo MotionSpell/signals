@@ -65,8 +65,9 @@ jobs:
     - name: Fix for libcrypto build
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y libtool && \
-        libtoolize --copy --force
+              sudo apt-get autoremove -y libtool && \
+              sudo apt-get install -y libtool && \
+              libtoolize --copy --force
 
     - name: Configure CMake
       run: |
