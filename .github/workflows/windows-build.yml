@@ -36,6 +36,14 @@ jobs:
       run: |
         echo "C:\msys64\mingw64\bin" >> $env:PATH
 
+    - name: Initialize vcpkg submodule
+      run: |
+        C:\msys64\usr\bin\bash.exe -l -c "git submodule update --init --recursive"
+
+    - name: Bootstrap vcpkg
+      run: |
+        C:\msys64\usr\bin\bash.exe -l -c "./vcpkg/bootstrap-vcpkg.sh"
+
     - name: Clone the Signals repository
       run: |
         C:\msys64\usr\bin\bash.exe -l -c "git clone --recurse-submodules -b vcpkg-cmake $env:SIGNALS_REPO $env:BUILD_DIR"
