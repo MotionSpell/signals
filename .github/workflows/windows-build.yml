@@ -43,6 +43,32 @@ jobs:
           curl
         msystem: MINGW64  
 
+    - name: Install dependencies for MINGW64
+      run: |
+        pacman -Syu --noconfirm && \
+        pacman -S --noconfirm \
+        mingw-w64-x86_64-base-devel \
+        mingw-w64-x86_64-pkg-config \
+        mingw-w64-x86_64-yasm \
+        mingw-w64-x86_64-nasm \
+        mingw-w64-x86_64-autoconf \
+        mingw-w64-x86_64-automake \
+        mingw-w64-x86_64-autoconf-archive \
+        mingw-w64-x86_64-python3 \
+        mingw-w64-x86_64-git \
+        mingw-w64-x86_64-curl \
+        mingw-w64-x86_64-tar \
+        mingw-w64-x86_64-unzip \
+        mingw-w64-x86_64-zip \
+        mingw-w64-x86_64-make \
+        mingw-w64-x86_64-gcc \
+        mingw-w64-x86_64-g++ \
+        mingw-w64-x86_64-libtool \
+        mingw-w64-x86_64-ca-certificates \
+        mingw-w64-x86_64-linux-api-headers \
+        mingw-w64-x86_64-mingw-w64-toolchain
+      shell: bash
+
     - name: Set MSYS2 path
       run: |
         echo "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
