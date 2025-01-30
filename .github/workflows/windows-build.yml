@@ -32,29 +32,39 @@ jobs:
           make
           git
           cmake
+          ninja
+          unzip
 
     - name: Set environment variables for MSYS2
       run: |
-        $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
-        echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "MSYSTEM=MINGW64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Initialize vcpkg submodule
-      run: msys2 -c "git submodule update --init --recursive"
+      shell: msys2 { bash -c }
+      run: git submodule update --init --recursive
 
     - name: Bootstrap vcpkg
-      run: msys2 -c "./vcpkg/bootstrap-vcpkg.sh"
+      shell: cmd
+      run: .\vcpkg\bootstrap-vcpkg.bat
 
     - name: Clone the Signals repository
-      run: msys2 -c "git clone --recurse-submodules -b vcpkg-cmake $env:SIGNALS_REPO $env:BUILD_DIR"
+      shell: msys2 { bash -c }
+      run: git clone --recurse-submodules -b vcpkg-cmake $SIGNALS_REPO $BUILD_DIR
 
     - name: Update submodules
-      run: msys2 -c "cd $env:BUILD_DIR && git submodule update --remote vcpkg"
+      shell: msys2 { bash -c }
+      run: cd $BUILD_DIR && git submodule update --remote vcpkg
 
     - name: Configure CMake
-      run: msys2 -c "cd $env:BUILD_DIR && cmake --preset mingw-production"
+      shell: msys2 { bash -c }
+      run: cd $BUILD_DIR && cmake --preset mingw-production
 
     - name: Build the project
-      run: msys2 -c "cd $env:BUILD_DIR && cmake --build build --preset mingw-production"
+      shell: msys2 { bash -c }
+      run: cd $BUILD_DIR && cmake --build --preset mingw-production
 
     - name: Run tests
-      run: msys2 -c "cd $env:BUILD_DIR && ctest --output-on-failure"
+      shell: msys2 { bash -c }
+      run: cd $BUILD_DIR && ctest --output-on-failure
