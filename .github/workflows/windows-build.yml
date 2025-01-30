@@ -18,10 +18,10 @@ jobs:
 
     - name: Set up environment variables
       run: |
-        echo "SIGNALS_REPO=https://github.com/MotionSpell/signals.git" >> $env:GITHUB_ENV
-        echo "BUILD_DIR=C:/signals" >> $env:GITHUB_ENV
-        echo "ACTIONS_RUNNER_DEBUG=true" >> $env:GITHUB_ENV
-        echo "ACTIONS_STEP_DEBUG=true" >> $env:GITHUB_ENV
+        echo "SIGNALS_REPO=https://github.com/MotionSpell/signals.git" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "BUILD_DIR=C:/signals" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "ACTIONS_RUNNER_DEBUG=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "ACTIONS_STEP_DEBUG=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
