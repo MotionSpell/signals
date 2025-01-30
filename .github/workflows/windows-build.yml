@@ -21,7 +21,7 @@ jobs:
 
     - name: Set up environment variables
       run: |
-        echo "BUILD_DIR=${{ github.workspace }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "BUILD_DIR=$env:GITHUB_WORKSPACE" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         echo "VCPKG_DEFAULT_TRIPLET=x64-mingw-dynamic" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       shell: pwsh
 
@@ -54,19 +54,18 @@ jobs:
       shell: cmd
 
     - name: Configure CMake
+      working-directory: ${{ env.BUILD_DIR }}
       run: |
-        mkdir build
-        cd build
-        cmake .. --preset mingw-production -DCMAKE_BUILD_TYPE=Release
+        cmake .. --preset mingw-production
       shell: bash
 
     - name: Build
-      working-directory: build
-      run: cmake --build . --config Release
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build --preset mingw-production
       shell: bash
 
     - name: Test
-      working-directory: build
+      working-directory: ${{ env.BUILD_DIR }}/build
       run: ctest -C Release --output-on-failure
       shell: bash
 
@@ -76,7 +75,7 @@ jobs:
       with:
         name: build-logs
         path: |
-          build/CMakeFiles/CMakeOutput.log
-          build/CMakeFiles/CMakeError.log
-          vcpkg/buildtrees/**/*.log
+          ${{ env.BUILD_DIR }}/build/CMakeFiles/CMakeOutput.log
+          ${{ env.BUILD_DIR }}/build/CMakeFiles/CMakeError.log
+          ${{ env.BUILD_DIR }}/vcpkg/buildtrees/**/*.log
         retention-days: 5
