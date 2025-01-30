@@ -53,10 +53,6 @@ jobs:
         chmod +x ./docker/install_cmake.sh && \
         ./docker/install_cmake.sh /opt/ninja /opt/cmake
 
-    - name: Clone the Signals repository
-      run: |
-        git clone --recurse-submodules -b vcpkg-cmake ${{ env.SIGNALS_REPO }} ${{ env.BUILD_DIR }}
-
     - name: Update submodules
       run: |
         cd ${{ env.BUILD_DIR }} && \
