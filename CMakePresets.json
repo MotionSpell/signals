@@ -134,7 +134,9 @@
 		"description" : "Build for production on Windows with mingw",
 		"inherits" : "mingw",
 		"cacheVariables" : {
-			"CMAKE_BUILD_TYPE" : "Release"
+			"CMAKE_BUILD_TYPE" : "Release",
+			"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+			"VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/toolchains/mingw.cmake"
 		}
 	},
 	{
