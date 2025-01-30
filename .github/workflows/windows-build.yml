@@ -1,0 +1,57 @@
+name: Windows Build
+
+on:
+  push:
+    branches:
+      - vcpkg-cmake
+  pull_request:
+    branches:
+      - vcpkg-cmake
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up environment variables
+      run: |
+        echo "SIGNALS_REPO=https://github.com/MotionSpell/signals.git" >> $env:GITHUB_ENV
+        echo "BUILD_DIR=C:/signals" >> $env:GITHUB_ENV
+
+    - name: Install MSYS2
+      run: |
+        Invoke-WebRequest -Uri https://github.com/msys2/msys2-installer/releases/download/20210725/msys2-x86_64-20210725.exe -OutFile msys2-installer.exe
+        Start-Process msys2-installer.exe -ArgumentList '/S' -Wait
+        Remove-Item msys2-installer.exe -Force
+
+    - name: Update MSYS2 and install dependencies
+      run: |
+        C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --noconfirm"
+        C:\msys64\usr\bin\bash.exe -l -c "pacman -S --noconfirm mingw-w64-x86_64-toolchain make git cmake"
+
+    - name: Set environment variables for MSYS2
+      run: |
+        echo "C:\msys64\mingw64\bin" >> $env:PATH
+
+    - name: Clone the Signals repository
+      run: |
+        C:\msys64\usr\bin\bash.exe -l -c "git clone --recurse-submodules -b vcpkg-cmake $env:SIGNALS_REPO $env:BUILD_DIR"
+
+    - name: Update submodules
+      run: |
+        C:\msys64\usr\bin\bash.exe -l -c "cd $env:BUILD_DIR && git submodule update --remote vcpkg"
+
+    - name: Configure CMake
+      run: |
+        C:\msys64\usr\bin\bash.exe -l -c "cd $env:BUILD_DIR && cmake --preset mingw-production"
+
+    - name: Build the project
+      run: |
+        C:\msys64\usr\bin\bash.exe -l -c "cd $env:BUILD_DIR && cmake --build build --preset mingw-production"
+
+    - name: Run tests
+      run: |
+        C:\msys64\usr\bin\bash.exe -l -c "cd $env:BUILD_DIR && ctest --output-on-failure"
