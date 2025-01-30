@@ -20,17 +20,26 @@ jobs:
       run: |
         echo "SIGNALS_REPO=https://github.com/MotionSpell/signals.git" >> $env:GITHUB_ENV
         echo "BUILD_DIR=C:/signals" >> $env:GITHUB_ENV
+        echo "ACTIONS_RUNNER_DEBUG=true" >> $env:GITHUB_ENV
+        echo "ACTIONS_STEP_DEBUG=true" >> $env:GITHUB_ENV
+
+    - name: Download MSYS2 installer
+      run: |
+        Write-Host "Downloading MSYS2 installer..."
+        Invoke-WebRequest -Uri https://github.com/msys2/msys2-installer/releases/download/2024-12-08/msys2-x86_64-20241208.exe -OutFile msys2-installer.exe
 
     - name: Install MSYS2
       run: |
-        Invoke-WebRequest -Uri https://github.com/msys2/msys2-installer/releases/download/2024-12-08/msys2-x86_64-20241208.exe -OutFile msys2-installer.exe
-        Start-Process msys2-installer.exe -ArgumentList '/S' -Wait
+        Write-Host "Starting MSYS2 installation..."
+        $process = Start-Process msys2-installer.exe -ArgumentList '/S' -PassThru -Wait
+        Write-Host "MSYS2 installation completed with exit code: $($process.ExitCode)"
         Remove-Item msys2-installer.exe -Force
 
     - name: Update MSYS2 and install dependencies
       run: |
-        C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --noconfirm"
-        C:\msys64\usr\bin\bash.exe -l -c "pacman -S --noconfirm mingw-w64-x86_64-toolchain make git cmake"
+        C:\msys64\usr\bin\bash.exe -l -c "echo -e '[options]\nCheckSpace\nSigLevel = Never\nServer = http://mirror.msys2.org/msys/\$repo/\$arch' > /etc/pacman.d/mirrorlist"
+        C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --noconfirm --verbose"
+        C:\msys64\usr\bin\bash.exe -l -c "pacman -S --noconfirm --verbose mingw-w64-x86_64-toolchain make git cmake"
 
     - name: Set environment variables for MSYS2
       run: |
