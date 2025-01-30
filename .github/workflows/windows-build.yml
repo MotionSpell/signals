@@ -23,7 +23,7 @@ jobs:
 
     - name: Install MSYS2
       run: |
-        Invoke-WebRequest -Uri https://github.com/msys2/msys2-installer/releases/download/20210725/msys2-x86_64-20210725.exe -OutFile msys2-installer.exe
+        Invoke-WebRequest -Uri https://github.com/msys2/msys2-installer/releases/download/2024-12-08/msys2-x86_64-20241208.exe -OutFile msys2-installer.exe
         Start-Process msys2-installer.exe -ArgumentList '/S' -Wait
         Remove-Item msys2-installer.exe -Force
 
