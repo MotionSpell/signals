@@ -35,7 +35,8 @@ jobs:
 
     - name: Set environment variables for MSYS2
       run: |
-        echo "C:\msys64\mingw64\bin" >> $env:PATH
+        $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
+        echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Initialize vcpkg submodule
       run: msys2 -c "git submodule update --init --recursive"
