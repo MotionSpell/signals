@@ -20,8 +20,7 @@ jobs:
 
     - name: Set up environment variables
       run: |
-        echo "SIGNALS_REPO=https://github.com/MotionSpell/signals.git" >> $GITHUB_ENV
-        echo "BUILD_DIR=C:/signals" >> $GITHUB_ENV
+        echo "BUILD_DIR=${{ github.workspace }}" >> $GITHUB_ENV
         echo "ACTIONS_RUNNER_DEBUG=true" >> $GITHUB_ENV
         echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
 
@@ -52,22 +51,18 @@ jobs:
       run: vcpkg/bootstrap-vcpkg.bat
       shell: cmd
 
-    - name: Clone the Signals repository
-      run: git clone --recurse-submodules -b vcpkg-cmake $SIGNALS_REPO $BUILD_DIR
-      shell: bash
-
     - name: Update submodules
-      run: cd $BUILD_DIR && git submodule update --remote vcpkg
+      run: git submodule update --remote vcpkg
       shell: bash
 
     - name: Configure CMake
-      run: cd $BUILD_DIR && cmake --preset mingw-production
+      run: cmake --preset mingw-production
       shell: bash
 
     - name: Build the project
-      run: cd $BUILD_DIR && cmake --build --preset mingw-production
+      run: cmake --build --preset mingw-production
       shell: bash
 
     - name: Run tests
-      run: cd $BUILD_DIR && ctest --output-on-failure
+      run: ctest --output-on-failure
       shell: bash
