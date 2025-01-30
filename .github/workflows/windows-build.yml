@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         submodules: true
         fetch-depth: 0
@@ -72,10 +72,11 @@ jobs:
 
     - name: Upload logs on failure
       if: failure()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: build-logs
         path: |
           build/CMakeFiles/CMakeOutput.log
           build/CMakeFiles/CMakeError.log
           vcpkg/buildtrees/**/*.log
+        retention-days: 5
