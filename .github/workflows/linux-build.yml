@@ -19,7 +19,7 @@ jobs:
     - name: Set up environment variables
       run: |
         echo "SIGNALS_REPO=https://github.com/MotionSpell/signals.git" >> $GITHUB_ENV
-        echo "BUILD_DIR=/signals" >> $GITHUB_ENV
+        echo "BUILD_DIR=${{ github.workspace }}" >> $GITHUB_ENV
 
     - name: Install dependencies
       run: |
