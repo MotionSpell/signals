@@ -17,6 +17,7 @@
 extern "C" {
 #include <libavdevice/avdevice.h> // avdevice_register_all
 #include <libavformat/avformat.h> // av_find_input_format
+#include <libavcodec/avcodec.h> // av_parser_init
 }
 
 #define PKT_QUEUE_SIZE 256
@@ -128,59 +129,61 @@ struct LibavDemux : Module {
 		}
 
 		for (unsigned i = 0; i<m_formatCtx->nb_streams; i++) {
-#ifdef xxxjack_removed
 			auto const st = m_formatCtx->streams[i];
-			auto const parser = av_stream_get_parser(st);
-			//xxxjack I don't know how to fix this code.
-			if (parser) {
-				st->codec->ticks_per_frame = parser->repeat_pict + 1;
-			} else {
-				m_host->log(Debug, format("No parser found for stream %s (%s). Couldn't use full metadata to get the timescale.", i, avcodec_get_name(st->codecpar->codec_id)).c_str());
-			}
-			st->codec->time_base = st->time_base; //allows to keep trace of the pkt timebase in the output metadata
-			if (!st->codec->framerate.num) {
-				st->codec->framerate = st->avg_frame_rate; //it is our reponsibility to provide the application with a reference framerate
-			}
-
-			std::shared_ptr<const IMetadata> m;
+			auto const parser = av_parser_init(st->codecpar->codec_id);
+			
+			// Create codec context from parameters
 			auto codecCtx = shptr(avcodec_alloc_context3(nullptr));
-			avcodec_copy_context(codecCtx.get(), st->codec);
-			switch (st->codecpar->codec_type) {
-			case AVMEDIA_TYPE_AUDIO: m = createMetadataPktLibavAudio(codecCtx.get()); break;
-			case AVMEDIA_TYPE_VIDEO: m = createMetadataPktLibavVideo(codecCtx.get()); break;
-			case AVMEDIA_TYPE_SUBTITLE: m = createMetadataPktLibavSubtitle(codecCtx.get()); break;
-			default: break;
+			if (avcodec_parameters_to_context(codecCtx.get(), st->codecpar) < 0) {
+				m_host->log(Debug, "Failed to copy codec params to codec context");
+				continue;
 			}
 
-			// Workaround: the codec_id, alone, is insufficient
-			// to determine the actual bitstream format.
-			// For example, depending on the container, AV_CODEC_ID_AAC might refer
-			// to "AAC ADTS" (mpegts case) or "raw AAC" (mp4 case).
+			// Set time base and framerate
+			codecCtx->time_base = st->time_base;
+			if (!codecCtx->framerate.num) {
+				codecCtx->framerate = st->avg_frame_rate;
+			}
+
+			// Create metadata based on stream type
+			std::shared_ptr<const IMetadata> m;
+			switch (st->codecpar->codec_type) {
+				case AVMEDIA_TYPE_AUDIO: m = createMetadataPktLibavAudio(codecCtx.get()); break;
+				case AVMEDIA_TYPE_VIDEO: m = createMetadataPktLibavVideo(codecCtx.get()); break;
+				case AVMEDIA_TYPE_SUBTITLE: m = createMetadataPktLibavSubtitle(codecCtx.get()); break;
+				default: break;
+			}
+
+			// Container-specific codec string assignment
 			{
 				auto meta = safe_cast<MetadataPkt>(const_cast<IMetadata*>(m.get()));
 				auto const container = std::string(m_formatCtx->iformat->name);
 				if(container.substr(0, 4) == "mov,") {
-					switch(codecCtx->codec_id) {
-					case AV_CODEC_ID_H264: meta->codec = "h264_avcc"; break;
-					case AV_CODEC_ID_HEVC: meta->codec = "hevc_avcc"; break;
-					case AV_CODEC_ID_AAC: meta->codec = "aac_raw"; break;
-					default: break;
+					switch(st->codecpar->codec_id) {
+						case AV_CODEC_ID_H264: meta->codec = "h264_avcc"; break;
+						case AV_CODEC_ID_HEVC: meta->codec = "hevc_avcc"; break;
+						case AV_CODEC_ID_AAC: meta->codec = "aac_raw"; break;
+						default: break;
 					}
 				} else if(container == "mpegts") {
-					switch(codecCtx->codec_id) {
-					case AV_CODEC_ID_H264: meta->codec = "h264_annexb"; break;
-					case AV_CODEC_ID_HEVC: meta->codec = "hevc_annexb"; break;
-					case AV_CODEC_ID_AAC: meta->codec = "aac_adts"; break;
-					case AV_CODEC_ID_AAC_LATM: meta->codec = "aac_latm"; break;
-					default: break;
+					switch(st->codecpar->codec_id) {
+						case AV_CODEC_ID_H264: meta->codec = "h264_annexb"; break;
+						case AV_CODEC_ID_HEVC: meta->codec = "hevc_annexb"; break;
+						case AV_CODEC_ID_AAC: meta->codec = "aac_adts"; break;
+						case AV_CODEC_ID_AAC_LATM: meta->codec = "aac_latm"; break;
+						default: break;
 					}
 				}
 			}
 
+			// Set output and metadata
 			m_streams[i].output = addOutput();
 			m_streams[i].output->setMetadata(m);
 			av_dump_format(m_formatCtx, i, url.c_str(), 0);
-#endif // xxxjack
+
+			if (parser) {
+				av_parser_close(parser);
+			}
 		}
 	}
 
