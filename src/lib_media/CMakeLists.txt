@@ -511,3 +511,25 @@ target_link_libraries(HttpSink
     )
 
 signals_install_plugin(HttpSink ".smd")
+
+# Rectifier target
+set(EXE_RECTIFIER_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/transform/rectifier.cpp
+)
+list(APPEND EXE_RECTIFIER_SRCS ${LIB_MODULES_SRCS})
+add_library(Rectifier SHARED ${EXE_RECTIFIER_SRCS})
+target_include_directories(Rectifier 
+    PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR} 
+    ${CMAKE_SOURCE_DIR}/src/
+)
+target_link_libraries(Rectifier 
+    PRIVATE 
+    media 
+    modules 
+    pipeline 
+    appcommon 
+    utils
+)
+
+signals_install_plugin(Rectifier ".smd")
