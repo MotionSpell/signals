@@ -73,10 +73,17 @@ jobs:
       run: cmake --build build --preset mingw-production
       shell: bash
 
+    - name: Prepare test environment
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        cp build/bin/unittests.exe build/lib/
+      shell: cmd
+
     - name: Test
-      working-directory: ${{ env.BUILD_DIR }}/build
-      run: ctest -C Release --output-on-failure
-      shell: bash
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        ${{ env.BUILD_DIR }}/build/bin/unittests.exe
+      shell: cmd
 
     - name: Upload logs on failure
       if: failure()

@@ -79,7 +79,11 @@ jobs:
         cd ${{ env.BUILD_DIR }} && \
         cmake --build build --preset linux-production
 
-    - name: Run tests
+    - name: Prepare test environment
       run: |
         cd ${{ env.BUILD_DIR }} && \
-        ctest --output-on-failure
+        cp build/bin/unittests.exe build/lib/
+
+    - name: Run tests
+      run: |
+        ${{ env.BUILD_DIR }}/build/lib/unittests.exe
