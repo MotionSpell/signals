@@ -201,7 +201,7 @@ unittest("decoder: audio mp3 manual frame to AAC") {
 
 	auto frame = getTestMp3Frame();
 
-	ASSERT_THROWN(decode->getInput(0)->push(frame));
+	decode->getInput(0)->push(frame);
 }
 
 unittest("decoder: audio mp3 to converter to AAC") {

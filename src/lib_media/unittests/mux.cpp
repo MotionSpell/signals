@@ -43,16 +43,19 @@ unittest("remux test: GPAC mp4 mux") {
 }
 
 unittest("remux test: libav mp4 mux") {
+	system("mkdir -p out");
+
 	DemuxConfig cfg;
 	cfg.url = "data/beepbop.mp4";
 	auto demux = loadModule("LibavDemux", &NullHost, &cfg);
 	std::shared_ptr<IModule> avcc2annexB;
-	auto muxConfig = MuxConfig{"out/output_libav", "mp4", ""};
+
+	auto muxConfig = MuxConfig{"out/output_libav.mp4", "mp4", ""};
 	auto mux = loadModule("LibavMux", &NullHost, &muxConfig);
+
 	ASSERT(demux->getNumOutputs() > 1);
 	for (int i = 0; i < demux->getNumOutputs(); ++i) {
-		//declare statically metadata to avoid missing data at start
-		auto data = make_shared<DataRaw>(0);
+		auto data = make_shared<DataBase>();
 		data->setMetadata(demux->getOutput(i)->getMetadata());
 		mux->getInput(i)->push(data);
 
@@ -67,6 +70,8 @@ unittest("remux test: libav mp4 mux") {
 	}
 
 	demux->process();
+
+	system("rm -f out/output_libav.mp4");
 }
 
 unittest("mux test: GPAC mp4 with generic descriptor") {
