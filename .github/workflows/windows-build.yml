@@ -1,4 +1,4 @@
-name: Windows Build
+name: Windows Build 
 
 on:
   push:
@@ -30,17 +30,9 @@ jobs:
       with:
         update: true
         install: >-
-          mingw-w64-x86_64-toolchain
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-ninja
-          mingw-w64-x86_64-pkg-config
-          mingw-w64-x86_64-nasm
-          mingw-w64-x86_64-yasm
-          mingw-w64-x86_64-autotools
-          mingw-w64-x86_64-gcc
           git
           make
-          curl
+          curl         
         msystem: MINGW64  
 
     - name: Set MSYS2 path
@@ -50,35 +42,23 @@ jobs:
         echo "MSYSTEM=MINGW64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       shell: pwsh
 
-    - name: Install dependencies for MINGW64
+    - name: Update MSYS2 and install dependencies
       run: |
-        # Ensure pacman is available by using MSYS2 shell
-        C:/msys64/usr/bin/bash.exe -c "pacman -Syu --noconfirm && pacman -S --noconfirm \
-        mingw-w64-x86_64-base-devel \
-        mingw-w64-x86_64-pkg-config \
-        mingw-w64-x86_64-yasm \
-        mingw-w64-x86_64-nasm \
-        mingw-w64-x86_64-autoconf \
-        mingw-w64-x86_64-automake \
-        mingw-w64-x86_64-autoconf-archive \
-        mingw-w64-x86_64-python3 \
-        mingw-w64-x86_64-git \
-        mingw-w64-x86_64-curl \
-        mingw-w64-x86_64-tar \
-        mingw-w64-x86_64-unzip \
-        mingw-w64-x86_64-zip \
-        mingw-w64-x86_64-make \
-        mingw-w64-x86_64-gcc \
-        mingw-w64-x86_64-g++ \
-        mingw-w64-x86_64-libtool \
-        mingw-w64-x86_64-ca-certificates \
-        mingw-w64-x86_64-linux-api-headers \
-        mingw-w64-x86_64-mingw-w64-toolchain"
-      shell: bash
+        C:\msys64\usr\bin\bash.exe -c "pacman -Syu --noconfirm"
+        C:\msys64\usr\bin\bash.exe -c "pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-pkg-config mingw-w64-x86_64-nasm mingw-w64-x86_64-yasm mingw-w64-x86_64-autotools mingw-w64-x86_64-gcc git make curl mingw-w64-x86_64-libtool mingw-w64-x86_64-python3 mingw-w64-x86_64-ca-certificates"
+      shell: cmd
+    
+    - name: Check MSYS2 runtime and toolchain version
+      run: |
+        C:\msys64\usr\bin\bash.exe -c "pacman -Qi msys2-runtime"
+        C:\msys64\usr\bin\bash.exe -c "gcc --version"
+        C:\msys64\usr\bin\bash.exe -c "pacman -Qs mingw-w64"
+      shell: cmd
 
     - name: Setup vcpkg
       run: |
         git submodule update --init --recursive
+        git -C .\vcpkg pull origin master
         .\vcpkg\bootstrap-vcpkg.bat
       shell: cmd
 
