@@ -1,9 +1,9 @@
 #include "helper.hpp"
 #include "helper_dyn.hpp"
 #include "helper_input.hpp"
-#include "lib_utils/log.hpp"
-#include "lib_utils/format.hpp"
-#include "lib_utils/tools.hpp" // safe_cast
+#include "log.hpp"
+#include "format.hpp"
+#include "tools.hpp" // safe_cast
 
 namespace Modules {
 

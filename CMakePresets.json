@@ -1,0 +1,371 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 0
+  },
+  "configurePresets": [
+	{
+		"name" : "preinstalled",
+		"displayName" : "Build without vcpkg and without MotionSpell sysroot",
+		"description" : "Build with app required dependencies pre-installed",
+		"binaryDir": "${sourceDir}/build",
+		"hidden": true
+	},
+	{
+		"name" : "sysroot",
+		"displayName" : "Build with MotionSpell sysroot",
+		"description" : "Build with MotionSpell sysroot/zenbuild for required dependencies",
+		"binaryDir": "${sourceDir}/build",
+		"cacheVariables": {
+			"SYSROOT_PATH": "${sourceDir}/../sysroot"
+		},
+		"hidden": true
+	},
+  	{
+  		"name" : "vcpkg",
+  		"displayName" : "Build with vcpkg",
+		"description" : "Build with vcpkg to install required dependencies",
+  		"binaryDir": "${sourceDir}/build",
+      	"cacheVariables": {
+        	"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      	},
+  		"hidden": true
+  	},	
+  	{
+		"name" : "windows",
+		"description" : "Build for Windows",
+		"generator" : "Visual Studio 17 2022",
+		"inherits" : "vcpkg",
+		"installDir": "${sourceDir}/../installed",
+	  "hidden" : true,
+	  "cacheVariables": {
+		  "VCPKG_TARGET_TRIPLET": "x64-windows"
+		},
+	  "condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Windows"
+	  }
+	},
+	{
+		"name" : "mingw",
+		"description" : "Build for Windows mingw",
+		"generator" : "MinGW Makefiles",
+		"inherits" : "vcpkg",
+		"hidden" : true,
+		"cacheVariables": {
+			"VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic"
+		},
+		"installDir": "${sourceDir}/../installed",
+			"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Windows"
+		}
+	},
+	{
+		"name" : "mac",
+		"description" : "Build for MacOS",
+		"generator" : "Unix Makefiles",
+		"inherits" : "vcpkg",
+		"hidden" : true,
+		"installDir": "${sourceDir}/../installed",
+		"cacheVariables": {
+        	"VCPKG_TARGET_TRIPLET": "arm64-osx-dynamic"
+  		},
+	  	"condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Darwin"
+	  	}
+	},
+	{
+		"name" : "intelmac",
+		"description" : "Build for MacOS",
+		"generator" : "Unix Makefiles",
+		"inherits" : "vcpkg",
+		"hidden" : true,
+		"installDir": "${sourceDir}/../installed",
+		"cacheVariables": {
+        	"VCPKG_TARGET_TRIPLET": "x64-osx-dynamic"
+  		},
+	  	"condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Darwin"
+	  	}
+	},
+	{
+		"name" : "linux",
+		"description" : "Build for Linux",
+		"generator" : "Unix Makefiles",
+		"inherits" : "vcpkg",
+		"hidden" : true,
+		"installDir": "${sourceDir}/../installed",
+		"cacheVariables": {
+        	"VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+  		},
+	  	"condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Linux"
+	  	}
+	},	
+	{
+		"name" : "windows-production",
+		"description" : "Build for production on Windows",
+		"inherits" : "windows",
+		"cacheVariables" : {
+			"CMAKE_BUILD_TYPE" : "Release"
+		}
+	},
+	{
+		"name" : "windows-develop",
+		"description" : "Build for development on Windows",
+		"inherits" : "windows",
+		"cacheVariables" : {
+			"CMAKE_BUILD_TYPE" : "RelWithDebInfo"
+		}
+	},
+	{
+		"name" : "mingw-production",
+		"description" : "Build for production on Windows with mingw",
+		"inherits" : "mingw",
+		"cacheVariables" : {
+			"CMAKE_BUILD_TYPE" : "Release",
+			"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+			"VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/toolchains/mingw.cmake"
+		}
+	},
+	{
+		"name" : "mingw-develop",
+		"description" : "Build for development on Windows with mingw",
+		"inherits" : "mingw",
+		"cacheVariables" : {
+			"CMAKE_BUILD_TYPE" : "RelWithDebInfo"
+		}
+	},
+	{
+		"name" : "mac-production",
+		"description" : "Build for production on Mac",
+		"inherits" : "mac",
+		"cacheVariables" : {
+			"CMAKE_BUILD_TYPE" : "Release"
+		}
+	},
+  	{
+  		"name" : "mac-develop",
+  		"description" : "Build for development on Mac",
+  		"inherits" : "mac",
+  		"cacheVariables" : {
+  			"CMAKE_BUILD_TYPE" : "RelWithDebInfo"
+  		}
+  	},{
+		"name" : "intelmac-production",
+		"description" : "Build for production on Mac",
+		"inherits" : "intelmac",
+		"cacheVariables" : {
+			"CMAKE_BUILD_TYPE" : "Release"
+		}
+	},
+  	{
+  		"name" : "intelmac-develop",
+  		"description" : "Build for development on Mac",
+  		"inherits" : "intelmac",
+  		"cacheVariables" : {
+  			"CMAKE_BUILD_TYPE" : "RelWithDebInfo"
+  		}
+  	},
+  	{
+  		"name" : "linux-production",
+  		"description" : "Build for production on Linux",
+  		"inherits" : "linux",
+  		"cacheVariables" : {
+  			"CMAKE_BUILD_TYPE" : "Release"
+  		}
+  	},
+  	{
+  		"name" : "linux-develop",
+  		"description" : "Build for development on Linux",
+  		"inherits" : "linux",
+  		"cacheVariables" : {
+  			"CMAKE_BUILD_TYPE" : "RelWithDebInfo"
+  		}
+  	},
+	{
+		"name" : "linux-production-sysroot",
+		"description" : "Build for production on Linux using sysroot/zenbuild",
+		"generator" : "Unix Makefiles",
+		"inherits" : "sysroot",
+		"cacheVariables" : {
+			"CMAKE_BUILD_TYPE" : "Release"
+		},
+		"condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Linux"
+		}
+	},
+	{
+		"name" : "linux-develop-sysroot",
+		"description" : "Build for development on Linux using sysroot/zenbuild",
+		"generator" : "Unix Makefiles",
+		"inherits" : "sysroot",
+		"cacheVariables" : {
+			"CMAKE_BUILD_TYPE" : "RelWithDebInfo"
+		},
+		"condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Linux"
+		}
+	}
+  ],
+  "buildPresets" : [
+	{
+		"name" : "windows-production",
+		"configurePreset" : "windows-production",
+		"configuration" : "Release",
+	  "condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Windows"
+	  }
+	},
+  {
+		"name" : "windows-develop",
+		"configurePreset" : "windows-develop",
+		"configuration" : "RelWithDebInfo",
+	  "condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Windows"
+	  }
+	},
+	{
+		"name" : "mingw-production",
+		"configurePreset" : "mingw-production",
+		"configuration" : "Release",
+	  "condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Windows"
+	  }
+	},
+  {
+		"name" : "mingw-develop",
+		"configurePreset" : "mingw-develop",
+		"configuration" : "RelWithDebInfo",
+	  "condition": {
+		  "type": "equals",
+		  "lhs": "${hostSystemName}",
+		  "rhs": "Windows"
+	  }
+	},
+	{
+  		"name" : "mac-production",
+  		"configurePreset" : "mac-production",
+  		"configuration" : "Release",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Darwin"
+		}
+  	},
+	{
+  		"name" : "mac-develop",
+  		"configurePreset" : "mac-develop",
+  		"configuration" : "RelWithDebInfo",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Darwin"
+		}
+  	},
+	{
+  		"name" : "linux-production",
+  		"configurePreset" : "linux-production",
+  		"configuration" : "Release",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Linux"
+		}
+  	},
+	{
+  		"name" : "linux-develop",
+  		"configurePreset" : "linux-develop",
+  		"configuration" : "RelWithDebInfo",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Linux"
+		}
+  	}
+  ],
+  "testPresets" : [
+  	{
+  		"name" : "windows-production",
+  		"configurePreset" : "windows",
+  		"configuration" : "Release",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Windows"
+		}
+  	},
+	{
+  		"name" : "windows-develop",
+  		"configurePreset" : "windows",
+  		"configuration" : "RelWithDebInfo",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Windows"
+		}
+  	},
+  	{
+  		"name" : "mac-production",
+  		"configurePreset" : "mac-production",
+  		"configuration" : "Release",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Darwin"
+		}
+  	},
+	{
+  		"name" : "mac-develop",
+  		"configurePreset" : "mac-develop",
+  		"configuration" : "RelWithDebInfo",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Darwin"
+		}
+  	},
+	{
+  		"name" : "linux-production",
+  		"configurePreset" : "linux-production",
+  		"configuration" : "Release",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Linux"
+		}
+  	},
+	{
+  		"name" : "linux-develop",
+  		"configurePreset" : "linux-develop",
+  		"configuration" : "RelWithDebInfo",
+		"condition": {
+			"type": "equals",
+			"lhs": "${hostSystemName}",
+			"rhs": "Linux"
+		}
+  	}
+  ]
+}
+  

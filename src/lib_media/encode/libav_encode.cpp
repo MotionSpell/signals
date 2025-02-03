@@ -309,7 +309,7 @@ struct LibavEncode : ModuleS {
 		Fraction framePeriod {};
 		std::function<AVFrame*(Data)> prepareFrame;
 		std::string codecOptions, codecName;
-		AVCodec* m_codec = nullptr;
+		const AVCodec* m_codec = nullptr;
 		bool m_isOpen = false;
 
 		void openEncoder(Data data) {
@@ -334,7 +334,7 @@ struct LibavEncode : ModuleS {
 				const auto fmt = safe_cast<const DataPcm>(data)->format;
 				libavAudioCtxConvert(&fmt, codecCtx.get());
 				codecCtx->sample_rate = fmt.sampleRate;
-				codecCtx->channels = fmt.numChannels;
+				av_channel_layout_default(&codecCtx->ch_layout, fmt.numChannels);
 
 				m_pcmFormat = fmt;
 				break;

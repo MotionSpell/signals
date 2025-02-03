@@ -1,0 +1,26 @@
+{
+    "name": "gpac",
+    "version": "2.4.0",
+    "description": "multimedia framework oriented towards rich media",
+    "homepage": "https://gpac.io/",
+    "license": "MIT",
+    "dependencies": [
+        
+        {
+            "name": "vcpkg-cmake-config",
+            "host": true
+        },
+        {
+            "name": "ffmpeg",
+            "features": ["x264"]
+        },
+        "libtheora",
+        "libvorbis",
+        "sdl2",
+        "libjpeg-turbo",
+        "freetype",
+        "nghttp2",
+        "curl",
+        "zlib"
+        ]
+}

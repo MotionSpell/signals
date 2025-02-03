@@ -134,7 +134,7 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 			auto out = addOutput();
 			out->setMetadata(meta);
 			auto stream = make_unique<Stream>(out, &rep, Fraction(rep.duration(mpd.get()), rep.timescale(mpd.get())), filePullerFactory->create(), eptr);
-			m_streams.push_back(move(stream));
+			m_streams.push_back(std::move(stream));
 		}
 	}
 

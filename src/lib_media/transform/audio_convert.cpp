@@ -210,20 +210,21 @@ struct AudioConvert : ModuleS {
 
 		void configure(const PcmFormat &srcFormat) {
 			AVSampleFormat avSrcFmt, avDstFmt;
-			uint64_t avSrcChannelLayout, avDstChannelLayout;
-			int avSrcNumChannels, avDstNumChannels, avSrcSampleRate, avDstSampleRate;
-			libavAudioCtxConvertLibav(&srcFormat, avSrcSampleRate, avSrcFmt, avSrcNumChannels, avSrcChannelLayout);
-			libavAudioCtxConvertLibav(&m_dstFormat, avDstSampleRate, avDstFmt, avDstNumChannels, avDstChannelLayout);
+			int avSrcSampleRate, avDstSampleRate;
+			AVChannelLayout srcLayout;
+			AVChannelLayout dstLayout;
+			libavAudioCtxConvertLibav(&srcFormat, avSrcSampleRate, avSrcFmt, &srcLayout);
+			libavAudioCtxConvertLibav(&m_dstFormat, avDstSampleRate, avDstFmt, &dstLayout);
 
-			m_resampler->m_SwrContext = swr_alloc_set_opts(m_resampler->m_SwrContext,
-			        avDstChannelLayout,
+			int sts = swr_alloc_set_opts2(&m_resampler->m_SwrContext,
+			        &dstLayout,
 			        avDstFmt,
 			        avDstSampleRate,
-			        avSrcChannelLayout,
+			        &srcLayout,
 			        avSrcFmt,
 			        avSrcSampleRate,
 			        0, nullptr);
-			if (!m_resampler->m_SwrContext)
+			if (!m_resampler->m_SwrContext || sts != 0)
 				throw error("Impossible to set options to the audio resampler while configuring.");
 
 			m_resampler->init();

@@ -27,7 +27,7 @@ class Queue {
 			std::unique_lock<std::mutex> lock(mutex);
 			while (dataQueue.empty())
 				dataAvailable.wait(lock);
-			T p;
+			T p = T(); // Initialize p
 			std::swap(p, dataQueue.front());
 			dataQueue.pop();
 			return p;

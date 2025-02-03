@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <string>
-#include "lib_utils/fraction.hpp"
+#include "fraction.hpp"
 
 Fraction getUTC();
 uint64_t UTC2NTP(uint64_t absTimeUTCInMs);

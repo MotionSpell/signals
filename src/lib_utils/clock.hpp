@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib_utils/fraction.hpp"
+#include "fraction.hpp"
 
 struct IClock {
 	virtual ~IClock() = default;

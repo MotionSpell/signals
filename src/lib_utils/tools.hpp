@@ -3,6 +3,7 @@
 #include <memory>
 #include <typeinfo>
 #include <stdexcept> //runtime_error
+#include <string>
 
 using std::make_unique;
 using std::make_shared;
@@ -12,7 +13,10 @@ std::unique_ptr<T> uptr(T *p) {
 	return std::unique_ptr<T>(p);
 }
 
-[[noreturn]] void throw_dynamic_cast_error(const char* typeName);
+[[noreturn]] inline void throw_dynamic_cast_error(const char* typeName) {
+	throw std::runtime_error("dynamic cast error: could not convert from Modules::Data to " + std::string(typeName));
+}
+
 
 template<class T, class U>
 std::shared_ptr<T> safe_cast(std::shared_ptr<U> p) {

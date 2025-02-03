@@ -542,7 +542,7 @@ function checkForCommonBuildTools {
     echo "or"
     echo "port install python27 && ln -s /opt/local/bin/python2.7 /opt/local/bin/python2"
     echo ""
-    error="1"
+    #error="1"
   fi
 
   if isMissing "autoreconf"; then

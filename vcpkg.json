@@ -1,0 +1,13 @@
+{
+  "name": "signals",
+  "version": "0.1",
+  "dependencies": [
+    "ffmpeg",
+    "gpac",
+    "sdl2",
+    "libjpeg-turbo",
+    "freetype",
+    "nghttp2",
+    "x264"
+  ]
+}

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "executor.hpp"
-#include "lib_utils/threadpool.hpp"
+#include "threadpool.hpp"
 
 namespace Signals {
 
