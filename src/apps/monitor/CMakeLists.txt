@@ -19,7 +19,6 @@ target_include_directories(monitor PRIVATE
 # Link necessary libraries (adjust as needed)
 target_link_libraries(monitor PRIVATE
     media
-    modules
     pipeline
     utils
     appcommon

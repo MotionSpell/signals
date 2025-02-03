@@ -22,6 +22,9 @@ target_compile_options(appcommon PRIVATE
     -Wall -Wextra -Werror
 )
 
+set_target_properties(appcommon PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+
 signals_install_library(appcommon STATIC)
 
 install(FILES ${LIB_APPCOMMON_INCS}

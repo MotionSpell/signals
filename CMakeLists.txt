@@ -57,6 +57,10 @@ else()
     message(FATAL_ERROR " Unknown CMAKE_SYSTEM_NAME ${CMAKE_SYSTEM_NAME}")
 endif()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-frtti)
+endif()
+
 # Define paths for source and scripts
 set(SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/scripts")
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")

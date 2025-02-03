@@ -33,9 +33,7 @@ add_executable(unittests ${EXE_TESTS_SRCS})
 
 # Link dependencies to the unittests executable 
 target_link_libraries(unittests
-    appcommon  
     media
-    modules
     pipeline
     utils
     CURL::libcurl

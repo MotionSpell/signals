@@ -25,7 +25,7 @@ target_include_directories(MPEG_DASH PRIVATE
 
 # Link the necessary libraries
 target_link_libraries(MPEG_DASH PRIVATE
-    media modules pipeline appcommon utils
+    media pipeline appcommon utils
 )
 
 signals_install_plugin(MPEG_DASH ".smd")

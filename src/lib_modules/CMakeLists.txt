@@ -26,6 +26,8 @@ target_include_directories(modules PUBLIC
 target_compile_options(modules PUBLIC
     -Wall -Wextra -Werror
 )
+set_target_properties(modules PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     target_link_options(modules PUBLIC
