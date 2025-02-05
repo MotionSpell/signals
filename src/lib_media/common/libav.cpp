@@ -260,7 +260,7 @@ void libavFrame2pcmConvert(const AVFrame *frame, PcmFormat *cfg) {
 	}
 
 	switch (frame->ch_layout.nb_channels) {
-	case 1:   cfg->layout = Modules::Mono; break;
+	case 1: cfg->layout = Modules::Mono; break;
 	case 2: cfg->layout = Modules::Stereo; break;
 	case 6: cfg->layout = Modules::FivePointOne; break;
 	default: throw std::runtime_error("Unknown libav audio layout");
