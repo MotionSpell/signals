@@ -22,7 +22,6 @@ target_include_directories(mcastdump PRIVATE
 # Link necessary libraries (adjust as needed)
 target_link_libraries(mcastdump PRIVATE
     media
-    modules
     pipeline
     utils
     appcommon

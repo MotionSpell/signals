@@ -21,7 +21,6 @@ target_include_directories(ts2ip PRIVATE
 # Link necessary libraries (adjust as needed)
 target_link_libraries(ts2ip PRIVATE
     media
-    modules
     pipeline
     utils
     appcommon

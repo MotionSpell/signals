@@ -78,7 +78,6 @@ target_include_directories(AVCC2AnnexBConverter PRIVATE
 target_link_libraries(AVCC2AnnexBConverter 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils
@@ -111,7 +110,6 @@ target_include_directories(LibavMuxHLSTS PRIVATE
 target_link_libraries(LibavMuxHLSTS 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     ${FFMPEG_LIBRARIES}
@@ -126,9 +124,6 @@ set(EXE_VIDEOCONVERTER_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/common/picture.cpp
 )
 
-list(APPEND EXE_VIDEOCONVERTER_SRCS
-    ${LIB_MODULES_SRCS}
-)
 
 # Add the target (VideoConvert.smd)
 add_library(VideoConvert SHARED ${EXE_VIDEOCONVERTER_SRCS})
@@ -142,7 +137,7 @@ target_include_directories(VideoConvert PRIVATE
 
 # Link the necessary libraries
 target_link_libraries(VideoConvert PRIVATE
-    media modules pipeline appcommon utils
+    media  pipeline appcommon utils
     ${FFMPEG_LIBRARIES}
 )
 
@@ -164,7 +159,6 @@ target_include_directories(AudioConvert
 target_link_libraries(AudioConvert 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -187,7 +181,6 @@ target_include_directories(JPEGTurboDecode
 target_link_libraries(JPEGTurboDecode 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -207,7 +200,6 @@ target_include_directories(JPEGTurboEncode PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} $
 target_link_libraries(JPEGTurboEncode 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -235,7 +227,6 @@ target_include_directories(Encoder
 target_link_libraries(Encoder 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -261,7 +252,6 @@ target_include_directories(Decoder
 target_link_libraries(Decoder 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -288,7 +278,6 @@ target_include_directories(LibavDemux
 target_link_libraries(LibavDemux 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -314,7 +303,6 @@ target_include_directories(LibavMux
 target_link_libraries(LibavMux 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -340,7 +328,6 @@ target_include_directories(LibavFilter
 target_link_libraries(LibavFilter 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -364,7 +351,6 @@ target_include_directories(GPACMuxMP4
 target_link_libraries(GPACMuxMP4 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -389,7 +375,6 @@ target_include_directories(GPACMuxMP4MSS
 target_link_libraries(GPACMuxMP4MSS 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -412,7 +397,6 @@ target_include_directories(GPACDemuxMP4Simple
 target_link_libraries(GPACDemuxMP4Simple 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -435,7 +419,6 @@ target_include_directories(GPACDemuxMP4Full
 target_link_libraries(GPACDemuxMP4Full 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils 
@@ -459,7 +442,6 @@ target_include_directories(FileSystemSink
 target_link_libraries(FileSystemSink 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils
@@ -482,7 +464,6 @@ target_include_directories(LogoOverlay
 target_link_libraries(LogoOverlay 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils
@@ -504,7 +485,6 @@ target_include_directories(HttpSink
 target_link_libraries(HttpSink 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils
@@ -526,7 +506,6 @@ target_include_directories(Rectifier
 target_link_libraries(Rectifier 
     PRIVATE 
     media 
-    modules 
     pipeline 
     appcommon 
     utils

@@ -40,6 +40,11 @@ jobs:
     - name: Initialize vcpkg submodule
       run: |
         git submodule update --init --recursive
+      
+    - name: Enable RTTI for Irrlicht in vcpkg
+      run: |
+        sed -i '' 's/PROPERTIES COMPILE_FLAGS -fno-rtti/PROPERTIES COMPILE_FLAGS -frtti/' vcpkg/ports/irrlicht/CMakeLists.txt
+
 
     - name: Bootstrap vcpkg
       run: |
@@ -53,7 +58,7 @@ jobs:
     - name: Build the project
       run: |
         cd ${{ env.BUILD_DIR }} && \
-        cmake --build build --preset mac-production
+        cmake --build build --preset mac-production  --parallel $(nproc)
 
     - name: Prepare test environment
       run: |

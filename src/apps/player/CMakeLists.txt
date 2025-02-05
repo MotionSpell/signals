@@ -23,7 +23,6 @@ target_include_directories(player PRIVATE
 # Link necessary libraries (adjust as needed)
 target_link_libraries(player PRIVATE
     media
-    modules
     pipeline
     utils
     appcommon

@@ -25,7 +25,6 @@ target_include_directories(dashcastx PRIVATE
 # Link libraries to the executable
 target_link_libraries(dashcastx PRIVATE 
     media
-    modules
     pipeline
     appcommon
     utils
