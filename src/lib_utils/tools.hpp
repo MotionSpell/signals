@@ -13,8 +13,8 @@ std::unique_ptr<T> uptr(T *p) {
 	return std::unique_ptr<T>(p);
 }
 
-[[noreturn]] inline void throw_dynamic_cast_error(const char* typeName) {
-	throw std::runtime_error("dynamic cast error: could not convert from Modules::Data to " + std::string(typeName));
+[[noreturn]] inline void throw_dynamic_cast_error(const char* typeNameFrom, const char* typeNameTo) {
+	throw std::runtime_error("dynamic cast error: could not convert from " + std::string(typeNameFrom) + " to " + std::string(typeNameTo));
 }
 
 
@@ -24,7 +24,7 @@ std::shared_ptr<T> safe_cast(std::shared_ptr<U> p) {
 		return nullptr;
 	auto r = std::dynamic_pointer_cast<T>(p);
 	if (!r)
-		throw_dynamic_cast_error(typeid(T).name());
+		throw_dynamic_cast_error(typeid(U).name(), typeid(T).name());
 	return r;
 }
 
@@ -34,7 +34,7 @@ T* safe_cast(U *p) {
 		return nullptr;
 	auto r = dynamic_cast<T*>(p);
 	if (!r)
-		throw_dynamic_cast_error(typeid(T).name());
+		throw_dynamic_cast_error(typeid(U).name(), typeid(T).name());
 
 	return r;
 }

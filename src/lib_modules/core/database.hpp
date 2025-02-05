@@ -101,6 +101,19 @@ std::shared_ptr<T> safe_cast(std::shared_ptr<const Modules::DataBase> p) {
 			return safe_cast<T>(r);
 	}
 
-	throw_dynamic_cast_error(typeid(T).name());
+    if (auto r = std::dynamic_pointer_cast<T>(p)) {
+        std::cout << "DEBUG safe cast: Cast successful!\n";
+        return r;
+    }
+
+    if (auto ref = std::dynamic_pointer_cast<const Modules::DataBaseRef>(p)) {
+        if (auto r = std::dynamic_pointer_cast<T>(ref->getData())) {
+            std::cout << "DEBUG safe cast: Cast successful via DataBaseRef!\n";
+            return r;
+        }
+    }
+
+    std::cerr << "ERROR :  dynamic_cast failed from " << typeid(*p).name() << " to " << typeid(T).name() << std::endl;
+	throw_dynamic_cast_error("Modules::Data", typeid(T).name());
 }
 
