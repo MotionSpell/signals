@@ -77,7 +77,7 @@ jobs:
     - name: Build the project
       run: |
         cd ${{ env.BUILD_DIR }} && \
-        cmake --build build --preset linux-production
+        cmake --build build --preset linux-production --parallel $(nproc)
 
     - name: Prepare test environment
       run: |

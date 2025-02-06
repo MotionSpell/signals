@@ -58,7 +58,7 @@ jobs:
     - name: Build the project
       run: |
         cd ${{ env.BUILD_DIR }} && \
-        cmake --build build --preset mac-production  --parallel $(nproc)
+        cmake --build build --preset mac-production  --parallel $(sysctl -n hw.logicalcpu)
 
     - name: Prepare test environment
       run: |

@@ -70,7 +70,7 @@ jobs:
 
     - name: Build
       working-directory: ${{ env.BUILD_DIR }}
-      run: cmake --build build --preset mingw-production
+      run: cmake --build build --preset mingw-production --parallel $(nproc)
       shell: bash
 
     - name: Prepare test environment

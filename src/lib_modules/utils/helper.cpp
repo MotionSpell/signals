@@ -4,6 +4,7 @@
 #include "log.hpp"
 #include "format.hpp"
 #include "tools.hpp" // safe_cast
+#include <iostream>
 
 namespace Modules {
 
@@ -88,8 +89,30 @@ void Output::connectFunction(std::function<void(Data)> f) {
 
 // used by unit tests
 void ConnectOutput(IOutput* o, std::function<void(Data)> f) {
-	auto output = safe_cast<Output>(o);
-	output->connectFunction(f);
+    if (!o) {
+        throw std::runtime_error("ConnectOutput: null input");
+    }
+
+    try {
+        // Try OutputDefault first
+        if (auto defaultOutput = dynamic_cast<OutputDefault*>(o)) {
+            defaultOutput->connectFunction(f);
+            return;
+        }
+        
+        // Then try Output
+        if (auto baseOutput = dynamic_cast<Output*>(o)) {
+            baseOutput->connectFunction(f);
+            return;
+        }
+
+        throw std::runtime_error("Could not cast to any known output type");
+        
+    } catch (const std::exception& e) {
+        std::cerr << "ConnectOutput failed: " << e.what() << std::endl;
+        std::cerr << "From type: " << typeid(*o).name() << std::endl;
+        throw;
+    }
 }
 
 }
