@@ -4,10 +4,12 @@ set -euo pipefail
 function has_astyle
 {
   if ! which astyle >/dev/null ; then
-    return 1
-  fi
-
-  if [ ! "$(astyle --version)" = "Artistic Style Version 3.1" ] ; then
+    # Install instructions for different platforms
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      echo "On macOS, install astyle with: brew install astyle" >&2
+    else
+      echo "Please install astyle" >&2
+    fi
     return 1
   fi
 
@@ -41,9 +43,16 @@ function reformat_one_file
   fi
 }
 
-find -name "*.hpp" -or -name "*.cpp" | while read f ; do
-  reformat_one_file "$f" &
-done
+# Use more portable find syntax
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  find . \( -name "*.hpp" -o -name "*.cpp" \) | while read f ; do
+    reformat_one_file "$f" &
+  done
+else
+  find -name "*.hpp" -or -name "*.cpp" | while read f ; do
+    reformat_one_file "$f" &
+  done
+fi
 
 wait
 

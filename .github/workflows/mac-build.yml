@@ -36,13 +36,7 @@ jobs:
           automake \
           libtool \
           python3 \
-          astyle
-    
-    - name: Install astyle on macOS
-      run: |
-        brew update
-        brew install astyle || brew reinstall astyle
-      shell: /bin/bash -e {0}
+          astyle   
 
     - name: Initialize vcpkg submodule
       run: |
