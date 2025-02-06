@@ -80,7 +80,7 @@ struct MPEG_DASH_Input::Stream {
 	OutputDefault* out;
 	Representation const * rep;
 	bool initializationChunkSent = false;
-    bool anySegmentDataReceived = false;
+	bool anySegmentDataReceived = false;
 	int64_t currNumber = 0;
 	Fraction segmentDuration;
 	unique_ptr<IFilePuller> source;
@@ -141,31 +141,31 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 	for(auto& stream : m_streams) {
 		stream->currNumber = stream->rep->startNumber(mpd.get());
 		if(mpd->dynamic) {
-            if (mpd->mediaPresentationDuration) {
-                if (stream->segmentDuration.num == 0)
-                    throw runtime_error("No duration for stream");
-                // Note that mediaPresentationDuration is in seconds,
-                // so this will give a value that is too low (at most one second).
-                stream->currNumber += int64_t((stream->segmentDuration.inverse() * mpd->mediaPresentationDuration));
-                int leeway = 1;
-                stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
+			if (mpd->mediaPresentationDuration) {
+				if (stream->segmentDuration.num == 0)
+					throw runtime_error("No duration for stream");
+				// Note that mediaPresentationDuration is in seconds,
+				// so this will give a value that is too low (at most one second).
+				stream->currNumber += int64_t((stream->segmentDuration.inverse() * mpd->mediaPresentationDuration));
+				int leeway = 1;
+				stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
 
-            } else {
-                auto now = mpd->publishTime;
-                if (!mpd->publishTime)
-                    now = (int64_t)getUTC();
+			} else {
+				auto now = mpd->publishTime;
+				if (!mpd->publishTime)
+					now = (int64_t)getUTC();
 
-                if (stream->segmentDuration.num == 0)
-                    throw runtime_error("No duration for stream");
+				if (stream->segmentDuration.num == 0)
+					throw runtime_error("No duration for stream");
 
-                stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
-                // HACK: add one segment latency.
-                // HACK modified by jack: also add at least a second, to cater for the times
-                // in the MPD to have a 1-second resolution.
-                int leeway = 2;
-                leeway += int(stream->segmentDuration.inverse());
-                stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
-            }
+				stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
+				// HACK: add one segment latency.
+				// HACK modified by jack: also add at least a second, to cater for the times
+				// in the MPD to have a 1-second resolution.
+				int leeway = 2;
+				leeway += int(stream->segmentDuration.inverse());
+				stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
+			}
 		}
 	}
 }
@@ -208,7 +208,7 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		}
 	}
 
-	
+
 	bool empty = true;
 
 	auto onBuffer = [&](SpanC chunk) {
@@ -232,16 +232,16 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 	}
 	if (empty) {
 		if (mpd->dynamic) {
-            int leeway = 1;
-            if (!stream->anySegmentDataReceived) leeway += 1;
+			int leeway = 1;
+			if (!stream->anySegmentDataReceived) leeway += 1;
 			stream->currNumber = std::max<int64_t>(stream->currNumber - leeway, rep->startNumber(mpd.get())); // too early, retry
 			return;
 		}
 		m_host->log(Error, format("can't download file: '%s'", url).c_str());
 		m_host->activate(false);
-    } else {
-        stream->anySegmentDataReceived = stream->initializationChunkSent;
-    }
+	} else {
+		stream->anySegmentDataReceived = stream->initializationChunkSent;
+	}
 
 	stream->initializationChunkSent = true;
 }

@@ -92,12 +92,12 @@ struct CurlHttpSender : HttpSender {
 			if(!data.len) {
 				// wait for flush finished, before returning
 				std::unique_lock<std::mutex> lock(m_mutex);
-                while(!allDataSent) {
-                    if (connectFailCountExceeded) {
-                       throw std::runtime_error("http_sender too many connection failures");
-                    }
-                    m_allDataSent.wait(lock);
-                }
+				while(!allDataSent) {
+					if (connectFailCountExceeded) {
+						throw std::runtime_error("http_sender too many connection failures");
+					}
+					m_allDataSent.wait(lock);
+				}
 			}
 		}
 
@@ -109,13 +109,13 @@ struct CurlHttpSender : HttpSender {
 	private:
 		void perform(CURL *curl) {
 			auto res = curl_easy_perform(curl);
-            if (res != CURLE_OK) {
+			if (res != CURLE_OK) {
 				m_log->log(Warning, (std::string("Transfer failed: ") + curl_easy_strerror(res)).c_str());
-                if (res == CURLE_COULDNT_CONNECT)
-                    connectFailCount++;
-            } else {
-                connectFailCount = 0;
-            }
+				if (res == CURLE_COULDNT_CONNECT)
+					connectFailCount++;
+			} else {
+				connectFailCount = 0;
+			}
 
 			long http_code = 0;
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
@@ -150,12 +150,12 @@ struct CurlHttpSender : HttpSender {
 					append(m_fifo, {m_prefixData.data(), m_prefixData.size()});
 
 				perform(curl.get());
-                if (m_cfg.maxConnectFailCount > 0 && connectFailCount >= m_cfg.maxConnectFailCount) {
-                    std::unique_lock<std::mutex> lock(m_mutex);
-                    connectFailCountExceeded = true;
-                    m_allDataSent.notify_one();
-                    break;
-                }
+				if (m_cfg.maxConnectFailCount > 0 && connectFailCount >= m_cfg.maxConnectFailCount) {
+					std::unique_lock<std::mutex> lock(m_mutex);
+					connectFailCountExceeded = true;
+					m_allDataSent.notify_one();
+					break;
+				}
 			}
 
 			curl_slist_free_all(headers);
@@ -199,8 +199,8 @@ struct CurlHttpSender : HttpSender {
 
 		std::condition_variable m_allDataSent;
 		bool allDataSent = false;
-        bool connectFailCountExceeded = false;
-        int connectFailCount = 0;
+		bool connectFailCountExceeded = false;
+		int connectFailCount = 0;
 
 		// data to send first at the beginning of each connection
 		std::vector<uint8_t> m_prefixData;

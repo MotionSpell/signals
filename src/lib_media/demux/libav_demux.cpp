@@ -131,7 +131,7 @@ struct LibavDemux : Module {
 		for (unsigned i = 0; i<m_formatCtx->nb_streams; i++) {
 			auto const st = m_formatCtx->streams[i];
 			auto const parser = av_parser_init(st->codecpar->codec_id);
-			
+
 			// Create codec context from parameters
 			auto codecCtx = shptr(avcodec_alloc_context3(nullptr));
 			if (avcodec_parameters_to_context(codecCtx.get(), st->codecpar) < 0) {
@@ -148,10 +148,10 @@ struct LibavDemux : Module {
 			// Create metadata based on stream type
 			std::shared_ptr<const IMetadata> m;
 			switch (st->codecpar->codec_type) {
-				case AVMEDIA_TYPE_AUDIO: m = createMetadataPktLibavAudio(codecCtx.get()); break;
-				case AVMEDIA_TYPE_VIDEO: m = createMetadataPktLibavVideo(codecCtx.get()); break;
-				case AVMEDIA_TYPE_SUBTITLE: m = createMetadataPktLibavSubtitle(codecCtx.get()); break;
-				default: break;
+			case AVMEDIA_TYPE_AUDIO: m = createMetadataPktLibavAudio(codecCtx.get()); break;
+			case AVMEDIA_TYPE_VIDEO: m = createMetadataPktLibavVideo(codecCtx.get()); break;
+			case AVMEDIA_TYPE_SUBTITLE: m = createMetadataPktLibavSubtitle(codecCtx.get()); break;
+			default: break;
 			}
 
 			// Container-specific codec string assignment
@@ -160,18 +160,18 @@ struct LibavDemux : Module {
 				auto const container = std::string(m_formatCtx->iformat->name);
 				if(container.substr(0, 4) == "mov,") {
 					switch(st->codecpar->codec_id) {
-						case AV_CODEC_ID_H264: meta->codec = "h264_avcc"; break;
-						case AV_CODEC_ID_HEVC: meta->codec = "hevc_avcc"; break;
-						case AV_CODEC_ID_AAC: meta->codec = "aac_raw"; break;
-						default: break;
+					case AV_CODEC_ID_H264: meta->codec = "h264_avcc"; break;
+					case AV_CODEC_ID_HEVC: meta->codec = "hevc_avcc"; break;
+					case AV_CODEC_ID_AAC: meta->codec = "aac_raw"; break;
+					default: break;
 					}
 				} else if(container == "mpegts") {
 					switch(st->codecpar->codec_id) {
-						case AV_CODEC_ID_H264: meta->codec = "h264_annexb"; break;
-						case AV_CODEC_ID_HEVC: meta->codec = "hevc_annexb"; break;
-						case AV_CODEC_ID_AAC: meta->codec = "aac_adts"; break;
-						case AV_CODEC_ID_AAC_LATM: meta->codec = "aac_latm"; break;
-						default: break;
+					case AV_CODEC_ID_H264: meta->codec = "h264_annexb"; break;
+					case AV_CODEC_ID_HEVC: meta->codec = "hevc_annexb"; break;
+					case AV_CODEC_ID_AAC: meta->codec = "aac_adts"; break;
+					case AV_CODEC_ID_AAC_LATM: meta->codec = "aac_latm"; break;
+					default: break;
 					}
 				}
 			}

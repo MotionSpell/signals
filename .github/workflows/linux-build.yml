@@ -47,7 +47,8 @@ jobs:
         g++ \
         make \
         libtool \
-        libtool-bin
+        libtool-bin \
+        astyle
 
     - name: Install CMake and Ninja
       run: |
