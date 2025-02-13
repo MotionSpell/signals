@@ -1,6 +1,29 @@
 cmake_minimum_required(VERSION 3.28)
 
 project(Signals VERSION 1.0)
+
+# Add Doxygen support after project declaration
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
+    set(DOXYGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/docs)
+    set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/html/index.html)
+    set(DOXYFILE_IN ${PROJECT_SOURCE_DIR}/doc/doxyfile)
+    set(DOXYFILE_OUT ${PROJECT_BINARY_DIR}/doxyfile)
+
+    # Configure the Doxyfile
+    configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
+
+    # Add documentation target
+    add_custom_target(docs ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM)
+
+
+endif()
+
 # Set toplevel signals directory here, so the CMakefiles work both standalone and under the lldash umbrella
 set(SIGNALS_TOP_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
