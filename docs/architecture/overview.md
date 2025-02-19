@@ -1,6 +1,7 @@
-# Signals Framework Architecture
+# %Signals Framework Overview {#mainpage}
+\ingroup architecture
 
-## Overview
+## Introduction
 Signals is a modern C++ framework for building modular multimedia applications with a focus on:
 - Minimal boilerplate code
 - Flexible pipeline architecture
@@ -10,7 +11,7 @@ Signals is a modern C++ framework for building modular multimedia applications w
 ## Core Components 
 
 ### Library Structure
-1. **lib_utils** (Base Layer)
+1. **@ref core_api "lib_utils"** (Base Layer)
    - Lightweight C++ helpers
    - String manipulation
    - Container utilities
@@ -24,26 +25,26 @@ Signals is a modern C++ framework for building modular multimedia applications w
    - C++11 based implementation
    - Generic data transport
 
-3. **lib_modules** (Module System)
+3. **@ref modules "lib_modules"** (Module System)
    - Core module interfaces
    - Data/metadata system
    - Input/Output management
    - Resource allocation
    - Clock synchronization
 
-4. **lib_pipeline** (Pipeline Layer)
+4. **@ref pipeline "lib_pipeline"** (Pipeline Layer)
    - Module orchestration
    - Connection management
    - Dynamic pipeline building
    - Error handling
 
-5. **lib_media** (Media Layer)
+5. **@ref media_api "lib_media"** (Media Layer)
    - Audio/Video type definitions
    - Format conversion
    - Codec integration
    - Stream management
 
-6. **plugins** (Extension Layer)
+6. **@ref plugins "plugins"** (Extension Layer)
    - FFmpeg integration
    - GPAC integration
    - Custom module implementations
@@ -51,29 +52,35 @@ Signals is a modern C++ framework for building modular multimedia applications w
 
 ## Key Concepts
 
-### Module System
-- **IModule**: Base interface for all modules
-- **Data Flow**: Reference counted data containers
-- **Connections**: Type-safe module interconnections
-- **Metadata**: Extensible attribute system
+### Modules 
+See @ref modules for details.
+- **@ref Modules::IModule "IModule"**: Base interface for all modules
+- **@ref Modules::Data "Data Flow"**: Reference counted data containers
+- **@ref Modules::Connection "Connections"**: Type-safe module interconnections
+- **@ref Modules::Metadata "Metadata"**: Extensible attribute system
 
 ### Pipeline Management
-- Dynamic module loading
-- Automatic resource management
-- Error propagation
-- Runtime reconfiguration
+See @ref pipeline for details.
+- @ref Pipeline::Manager "Dynamic module loading"
+- @ref Pipeline::ResourceManager "Automatic resource management"
+- @ref Pipeline::ErrorHandler "Error propagation"
+- @ref Pipeline::Config "Runtime reconfiguration"
 
 ### Plugin Architecture
-- Dynamic loading
-- Version management
-- Resource isolation
-- Platform independence
+See @ref plugins for details.
+- @ref Plugin::Loader "Dynamic loading"
+- @ref Plugin::Version "Version management"
+- @ref Plugin::Resource "Resource isolation"
+- @ref Plugin::Platform "Platform independence"
 
 ## Workflow Examples
 
 ### Basic Pipeline
+
 ```cpp
 Pipeline p;
 auto demux = p.add("LibavDemux", &cfg);
 auto decoder = p.add("LibavDecode");
 p.connect(decoder, demux);
+```
+For a complete example, see @ref basic_pipeline_example "Basic Pipeline Example"

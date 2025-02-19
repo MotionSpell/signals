@@ -1,4 +1,7 @@
-# Utils API Documentation
+# Utils API Documentation {#utils_api}
+\page utils_api Utils API Documentation
+\ingroup api
+
 
 ## Overview
 The Utils library provides essential utility functions and classes that support the core functionality of the Signals framework. These utilities include logging, time management, scheduling, and various helper functions.

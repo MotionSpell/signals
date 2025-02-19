@@ -1,12 +1,14 @@
-AStyle
-======
+# AStyle {#codingstyle}
+\page codingstyle Coding Style
+\ingroup guides
 
 AStyle is a code beautifier tool. Code should be compliant with the following pattern provided by AStyle :
 AStyle -r --indent=tab --indent-classes --indent-col1-comments --style=attach --keep-one-line-statements '*.hpp' '*.cpp'
 
 
-Example
-=======
+# Example
+
+```cpp
 namespace OtherNamespace {
 class MyForwardDeclaredType;
 }
@@ -19,33 +21,33 @@ namespace Signals {
 template <typename T>
 class MyClass {
 public:
-	typedef T value_type;
-	enum MyEnum {EnumTypeA = 0, EnumTypeB = 1}; 
-	
-	/**
-	* Public methods come first. No need to comment if not useful.
-	*/
-	explicit MyClass(const std::string &s);
-	~MyClass();
+    typedef T value_type;
+    enum MyEnum {EnumTypeA = 0, EnumTypeB = 1}; 
+    
+    /**
+    * Public methods come first. No need to comment if not useful.
+    */
+    explicit MyClass(const std::string &s);
+    ~MyClass();
 
-	/**
-	* Document member function, but do not go overboard.
-	*/
-	void myMemberFunction() const;
+    /**
+    * Document member function, but do not go overboard.
+    */
+    void myMemberFunction() const;
 
-	/*
-	* NEVER use public variables; except static const POD.
-	*/
-	static const double myConst;
+    /*
+    * NEVER use public variables; except static const POD.
+    */
+    static const double myConst;
 
 protected:
-	int myVar; //small comments like this
+    int myVar; //small comments like this
 
 private:
-	/**
-	* Large comments like this
-	*/
-	std::vector<T> myVect;
+    /**
+    * Large comments like this
+    */
+    std::vector<T> myVect;
 };
 
 const double MyClass::myConst = 42.0;
@@ -53,21 +55,20 @@ const double MyClass::myConst = 42.0;
 template <typename T>;
 MyClass<T>::MyClass(const std::string &s)
 : myVar(3) {
-	if (s.size()) {
-		for (int i = 0; i < s.size(); ++i) {
-			// ...
-		}
-	} else if (myVar) {
-		// ...
-	} else {
-		// ...
-	}
+    if (s.size()) {
+        for (int i = 0; i < s.size(); ++i) {
+            // ...
+        }
+    } else if (myVar) {
+        // ...
+    } else {
+        // ...
+    }
 }
 }
+```
 
-
-Indentation and spacing
-=======================
+# Indentation and spacing
 
 * Tabs. Additional spaces on defines, large comments, or variable names aligning.
 * public, protected, private are on the first column.
@@ -83,15 +84,13 @@ Indentation and spacing
 * Pointer on return type (and other constness) can be on the right: A* get(); const A* const;
 
 
-Case
-====
+# Case
 
 * Type names, template parameters and enum constants use TypeCase
 * (static const) (member) variable, and (member) function names use camelCase, not under_scores.
 
 
-Order
-=====
+# Order
 
 * Public typedefs
 * Public enums
@@ -107,8 +106,7 @@ Order
 * Use either const A* const or A const* const.
 
 
-Headers
-=======
+# Headers
 
 * They are named *.hpp for C++, *.h for C.
 * Always put guards in header files: #pragma once
@@ -116,8 +114,7 @@ Headers
 * Only forward declare if you only need a reference or pointer to type.
 
 
-Lines
-=====
+# Lines
 
 * No line length limit. Split as few as possible. Try to be consistent.
 * Avoid trailing whitespace.
@@ -125,21 +122,18 @@ Lines
 * Unix '\n' ending on the repository.
 
 
-Namespaces
-==========
+# Namespaces
 
 * In header files, always use fully qualified name for standard library (e.g.using namespace std; is only allowed in implementation files).
 * No indent in namespaces.
 
 
-Templates
-=========
+# Templates
 
 * If possible, put the code in a cpp file, and instantiate them explicitely.
 
 
-Portability
-===========
+# Portability
 
 * Assume little endian.
 * Don't assume type sizes (except char and unsigned char). Use for portable fixed size types.
@@ -147,8 +141,7 @@ Portability
 * Wrap up platform-dependant code into common APIs.
 
 
-Performance
-===========
+# Performance
 
 * This applies mostly to the input/output/core code.
 * Avoid virtual calls in perf-critical parts of the code. In this case you may use static virtual inheritance (template powa).
@@ -158,8 +151,7 @@ Performance
 * Do not return large objects. Take a reference/pointer as output.
 
 
-Misc
-====
+# Misc
 
 * Use assert for impossible conditions. Do not put statements with side effects in asserts.
 * Do not use exit() except on tests.

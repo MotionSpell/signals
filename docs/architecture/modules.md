@@ -1,4 +1,6 @@
-# Modules System
+# Modules {#modules}
+\page modules Modules
+\ingroup architecture
 
 ## Overview
 The Signals module system provides the core building blocks for creating modular media processing pipelines.
@@ -69,4 +71,6 @@ struct DynamicModule : public ModuleDynI {
    - Use exceptions for errors
    - Propagate errors through pipeline
    - Clean resource handling
+
+
 

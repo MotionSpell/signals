@@ -1,4 +1,6 @@
-# Core API Documentation
+# Core API Documentation {#core_api}
+\page core_api Core API Documentation
+\ingroup api
 
 ## Overview
 The Core API provides fundamental building blocks for the Signals framework:
@@ -25,6 +27,7 @@ namespace Modules {
 ```
 
 ### Module System
+
 ```cpp
 class IModule {
     // Base interface for all modules

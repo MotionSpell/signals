@@ -1,4 +1,7 @@
-# Signals Plugin System
+
+# Plugins {#plugins}
+\page plugins Plugins
+\ingroup architecture
 
 ## Overview
 The Signals plugin system provides a flexible way to extend functionality through dynamically loaded modules.
@@ -140,11 +143,6 @@ void processOne(Data data) override {
                                std::string(e.what()));
     }
 }
-
-
-
-
-
 
 
 

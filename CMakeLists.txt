@@ -8,7 +8,7 @@ if(DOXYGEN_FOUND)
     set(DOXYGEN_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
     set(DOXYGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/docs)
     set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/html/index.html)
-    set(DOXYFILE_IN ${PROJECT_SOURCE_DIR}/doc/doxyfile)
+    set(DOXYFILE_IN ${PROJECT_SOURCE_DIR}/docs/doxyfile)
     set(DOXYFILE_OUT ${PROJECT_BINARY_DIR}/doxyfile)
 
     # Configure the Doxyfile
@@ -20,7 +20,6 @@ if(DOXYGEN_FOUND)
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen"
         VERBATIM)
-
 
 endif()
 

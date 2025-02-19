@@ -1,4 +1,6 @@
-# Media API Documentation
+# Media API Documentation {#media_api}
+\page media_api Media API Documentation
+\ingroup api
 
 ## Overview
 The Media API provides essential components for audio and video processing within the Signals framework. It includes modules for demuxing, decoding, encoding, muxing, and various transformations.
@@ -78,6 +80,8 @@ auto converter = loadModule("AudioConvert", &NullHost, &cfg);
 - Exception safety
 
 ## Example Workflow
+
+
 ```cpp
 Pipeline p;
 auto demux = p.add("LibavDemux", &cfg);

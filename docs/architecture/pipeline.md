@@ -1,4 +1,6 @@
-# Pipeline System
+# Pipelines  {#pipeline}
+\page pipeline Pipeline
+\ingroup architecture
 
 ## Overview
 The Pipeline system is the core orchestration layer in Signals, managing module lifecycles, connections, and data flow.
@@ -78,3 +80,5 @@ p.start();
 - Performance monitoring
 - Resource management
 - Plugin support
+
+
