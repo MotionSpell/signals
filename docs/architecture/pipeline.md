@@ -10,11 +10,13 @@ The Pipeline system is the core orchestration layer in Signals, managing module 
 ### Pipeline Class
 - Module management
 - Connection topology
-- Thread safety
+- Thread management
 - Error handling
+- Statistics handling
 - Runtime reconfiguration
 
 ### Core Features
+
 1. **Module Management**
 ```cpp
 // Add modules
@@ -31,6 +33,8 @@ pipeline.removeModule(module);
 pipeline.connect(source, sink);
 pipeline.connect(decoder, GetInputPin(muxer, 0));
 
+pipeline.start();
+
 // Dynamic modifications
 pipeline.disconnect(source, 0, sink, 0);
 ```
@@ -44,7 +48,7 @@ pipeline.exitSync();
 ```
 
 ## Threading Models
-- One thread per module
+- One thread, one thread per module, thread-pool
 - Synchronized data flow
 - Lock-free queues
 - Thread-safe operations
@@ -68,6 +72,7 @@ auto sink = p.add("FileOutput", &outputConfig);
 p.connect(source, processor);
 p.connect(processor, sink);
 p.start();
+p.waitForEndOfStream();
 ```
 
 ### Dynamic Modification
@@ -80,5 +85,3 @@ p.start();
 - Performance monitoring
 - Resource management
 - Plugin support
-
-

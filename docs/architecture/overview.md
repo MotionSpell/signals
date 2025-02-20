@@ -17,38 +17,34 @@ Signals is a modern C++ framework for building modular multimedia applications w
    - Container utilities
    - Logging system
    - Profiling tools
-   - Clock management
+   - Clock and scheduling
 
-2. **lib_signals** (Messaging Layer)
+2. **@ref signals "lib_signals"** (Messaging Layer)
    - Signal/slot mechanism
    - Type-safe messaging
-   - C++11 based implementation
    - Generic data transport
 
 3. **@ref modules "lib_modules"** (Module System)
    - Core module interfaces
-   - Data/metadata system
+   - Data/Metadata system
    - Input/Output management
    - Resource allocation
-   - Clock synchronization
+   - Module factory and loader
 
 4. **@ref pipeline "lib_pipeline"** (Pipeline Layer)
-   - Module orchestration
-   - Connection management
-   - Dynamic pipeline building
-   - Error handling
+   - Orchestration of modules
+   - Threading management
+   - Graph dynamic capabilities
+   - Error and statistics handling
 
 5. **@ref media_api "lib_media"** (Media Layer)
-   - Audio/Video type definitions
-   - Format conversion
-   - Codec integration
-   - Stream management
+   - Module specialization for media
+   - Codec/Format conversion
+   - GPAC and FFmpeg wrappers
+   - Utilities: XML, HTTP, dates, ...
 
-6. **@ref plugins "plugins"** (Extension Layer)
-   - FFmpeg integration
-   - GPAC integration
-   - Custom module implementations
-   - Media transformations
+6. **@ref plugins "plugins"** (Media Layer too)
+   - lib_media modules built independently
 
 ## Key Concepts
 
@@ -61,17 +57,7 @@ See @ref modules for details.
 
 ### Pipeline Management
 See @ref pipeline for details.
-- @ref Pipeline::Manager "Dynamic module loading"
-- @ref Pipeline::ResourceManager "Automatic resource management"
-- @ref Pipeline::ErrorHandler "Error propagation"
-- @ref Pipeline::Config "Runtime reconfiguration"
-
-### Plugin Architecture
-See @ref plugins for details.
-- @ref Plugin::Loader "Dynamic loading"
-- @ref Plugin::Version "Version management"
-- @ref Plugin::Resource "Resource isolation"
-- @ref Plugin::Platform "Platform independence"
+- @ref Pipeline::Pipeline "Dynamic module loading"
 
 ## Workflow Examples
 
@@ -82,5 +68,8 @@ Pipeline p;
 auto demux = p.add("LibavDemux", &cfg);
 auto decoder = p.add("LibavDecode");
 p.connect(decoder, demux);
+
+p.start();
+p.waitForEndOfStream();
 ```
-For a complete example, see @ref basic_pipeline_example "Basic Pipeline Example"
+For a complete example, see @ref basic_pipeline_example "Basic Pipeline Example" and unit tests

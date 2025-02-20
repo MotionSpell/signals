@@ -143,9 +143,3 @@ void processOne(Data data) override {
                                std::string(e.what()));
     }
 }
-
-
-
-
-
-

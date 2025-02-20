@@ -9,7 +9,7 @@ The Signals module system provides the core building blocks for creating modular
 
 ### Base Module Classes
 - `Module`: Base class for all modules
-- `ModuleS`: Single input specialized module
+- `ModuleS`: Single input/output specialized module
 - `ModuleDynI`: Dynamic input module (e.g. muxers)
 
 ### Key Components
@@ -57,6 +57,7 @@ struct DynamicModule : public ModuleDynI {
 ```
 
 ## Module Development Guidelines
+
 1. Data Handling
    - Use reference counting
    - Handle metadata properly
@@ -71,6 +72,3 @@ struct DynamicModule : public ModuleDynI {
    - Use exceptions for errors
    - Propagate errors through pipeline
    - Clean resource handling
-
-
-
