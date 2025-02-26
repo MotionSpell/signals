@@ -74,7 +74,7 @@ struct PesStream : Stream {
 		}
 
 		void flush() override {
-			auto pesBuffer = move(m_pesBuffer);
+			auto pesBuffer = std::move(m_pesBuffer);
 
 			if(pesBuffer.empty())
 				return; // nothing to flush

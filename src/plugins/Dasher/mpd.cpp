@@ -62,10 +62,10 @@ Tag mpdToTags(MPD const& mpd) {
 	tMPD["minBufferTime"] = formatPeriod(mpd.minBufferTime);
 	if (mpd.dynamic)
 		tMPD["minimumUpdatePeriod"] = formatPeriod(mpd.minimum_update_period);
-    // Jack moved this out of the "else": originally it wasn't included for dynamic
-    // MPDs, but https://dashif-documents.azurewebsites.net/Guidelines-TimingModel/master/Guidelines-TimingModel.html#timing-and-presentation-types
-    // suggests it is allowed...
-    tMPD["mediaPresentationDuration"] = formatPeriod(mpd.mediaPresentationDuration);
+	// Jack moved this out of the "else": originally it wasn't included for dynamic
+	// MPDs, but https://dashif-documents.azurewebsites.net/Guidelines-TimingModel/master/Guidelines-TimingModel.html#timing-and-presentation-types
+	// suggests it is allowed...
+	tMPD["mediaPresentationDuration"] = formatPeriod(mpd.mediaPresentationDuration);
 
 	{
 		auto tProgramInformation = Tag { "ProgramInformation" };

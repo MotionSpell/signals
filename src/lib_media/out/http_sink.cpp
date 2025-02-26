@@ -55,7 +55,7 @@ struct HttpSink : Modules::ModuleS {
 				auto http = Modules::createModule<Modules::Out::HTTP>(m_host, httpConfig);
 				http->getInput(0)->push(data);
 				http->process();
-				zeroSizeConnections[url] = move(http);
+				zeroSizeConnections[url] = std::move(http);
 			} else {
 				if (!exists(zeroSizeConnections, url)) {
 					m_host->log(Debug, format("Starting transfer to URL: \"%s\"", url).c_str());

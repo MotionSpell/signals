@@ -112,6 +112,7 @@ std::string serializeXml(Tag const& tag, bool prettify) {
 		va_list args;
 		va_start(args, format);
 		int n = vsnprintf(buffer, sizeof buffer, format, args);
+		(void)n;
 		assert(n < int(sizeof buffer));
 		va_end(args);
 

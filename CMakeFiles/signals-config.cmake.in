@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+set(FOO_DIR "@PACKAGE_SOME_INSTALL_DIR@")
+
+include("${CMAKE_CURRENT_LIST_DIR}/signals-utils.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/signals-appcommon.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/signals-pipeline.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/signals-modules.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/signals-media.cmake")
+
+set_and_check(signals_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
+set(signals_LIBRARIES "${PACKAGE_PREFIX_DIR}/lib")

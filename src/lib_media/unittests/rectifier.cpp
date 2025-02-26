@@ -136,7 +136,7 @@ struct Fixture {
 	}
 
 	void addStream(int i, std::unique_ptr<ModuleS>&& generator) {
-		generators.push_back(move(generator));
+		generators.push_back(std::move(generator));
 
 		ConnectModules(generators[i].get(), 0, rectifier.get(), i);
 		ConnectOutput(rectifier->getOutput(i), [i, this](Data data) {

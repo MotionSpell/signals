@@ -1,5 +1,5 @@
 #include "scheduler.hpp"
-#include "lib_utils/format.hpp"
+#include "format.hpp"
 
 auto const NEVER = Fraction(-1, 1);
 

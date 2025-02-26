@@ -14,6 +14,9 @@ x64/
 build/
 [Bb]in/
 [Oo]bj/
+tmp/
+# This directory shows up so often during testing that"ll just ignore it.
+vcpkg_installed/
 
 # Enable "build/" folder in the NuGet Packages folder since NuGet packages use it for MSBuild targets
 !packages/*/build/
@@ -160,6 +163,7 @@ tags
 /extra/config.guess
 extra_lib/
 doc/html/
+/extra/patches/
 
 # test output: directory is created when tests starts and removed when they pass
 /out

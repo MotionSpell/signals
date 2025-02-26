@@ -1,0 +1,90 @@
+name: Linux Build
+
+on:
+  push:
+    branches:
+      - vcpkg-cmake
+  pull_request:
+    branches:
+      - vcpkg-cmake
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up environment variables
+      run: |
+        echo "SIGNALS_REPO=https://github.com/MotionSpell/signals.git" >> $GITHUB_ENV
+        echo "BUILD_DIR=${{ github.workspace }}" >> $GITHUB_ENV
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y --no-install-recommends \
+        tzdata \
+        zip \
+        unzip \
+        curl \
+        tar \
+        git \
+        ca-certificates \
+        linux-libc-dev \
+        build-essential \
+        pkg-config \
+        yasm \
+        nasm \
+        autoconf \
+        automake \
+        autoconf-archive \
+        autotools-dev \
+        python3 \
+        python3-jinja2 \
+        gcc \
+        g++ \
+        make \
+        libtool \
+        libtool-bin \
+        astyle
+
+    - name: Install CMake and Ninja
+      run: |
+        chmod +x ./docker/install_cmake.sh && \
+        ./docker/install_cmake.sh /opt/ninja /opt/cmake
+
+    - name: Initialize vcpkg submodule
+      run: |
+        git submodule update --init --recursive
+
+    - name: Bootstrap vcpkg
+      run: |
+        ./vcpkg/bootstrap-vcpkg.sh
+
+    - name: Fix for libcrypto build
+      run: |
+        sudo apt-get update && \
+              sudo apt-get autoremove -y libtool && \
+              sudo apt-get install -y libtool && \
+              libtoolize --copy --force
+
+    - name: Configure CMake
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        cmake --preset linux-production
+
+    - name: Build the project
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        cmake --build build --preset linux-production --parallel $(nproc)
+
+    - name: Prepare test environment
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        cp build/bin/unittests.exe build/lib/
+
+    - name: Run tests
+      run: |
+        ${{ env.BUILD_DIR }}/build/lib/unittests.exe

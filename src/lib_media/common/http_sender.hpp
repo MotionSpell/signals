@@ -37,7 +37,7 @@ struct HttpSenderConfig {
 	std::string userAgent;
 	HttpRequest request = POST;
 	std::vector<std::string> extraHeaders;
-    int maxConnectFailCount = 0;
+	int maxConnectFailCount = 0;
 };
 
 std::unique_ptr<HttpSender> createHttpSender(HttpSenderConfig const& config, Modules::KHost* log);

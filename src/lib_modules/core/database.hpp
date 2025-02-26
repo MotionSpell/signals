@@ -6,6 +6,7 @@
 #include <vector>
 #include "lib_utils/small_map.hpp"
 #include "lib_utils/clock.hpp"
+#include "lib_utils/tools.hpp"
 
 namespace Modules {
 
@@ -86,8 +87,6 @@ inline bool isDeclaration(Data data) {
 
 }
 
-[[noreturn]] void throw_dynamic_cast_error(const char* typeName);
-
 template<class T>
 std::shared_ptr<T> safe_cast(std::shared_ptr<const Modules::DataBase> p) {
 	if (!p)
@@ -102,6 +101,6 @@ std::shared_ptr<T> safe_cast(std::shared_ptr<const Modules::DataBase> p) {
 			return safe_cast<T>(r);
 	}
 
-	throw_dynamic_cast_error(typeid(T).name());
+	throw_dynamic_cast_error("Modules::Data", typeid(T).name());
 }
 

@@ -23,6 +23,7 @@ string expandVars(string input, map<string,string> const& values) {
 
 	auto parseVarName = [&]() -> string {
 		auto leadingDollar = pop();
+		(void)leadingDollar;
 		assert(leadingDollar == '$');
 
 		string name;

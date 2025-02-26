@@ -1,0 +1,47 @@
+<doxygenlayout version="1.0">
+  <navindex>
+    <tab type="mainpage" visible="no" title=""/>
+      
+    <tab type="usergroup" visible="yes" title="Architecture">
+      <tab type="user" title="Modules" url="@ref modules"/>
+      <tab type="user" title="Pipeline" url="@ref pipeline"/>
+      <tab type="user" title="Plugins" url="@ref plugins"/>
+    </tab>
+    
+    <tab type="usergroup" visible="yes" title="API Documentation">
+      <tab type="user" title="Core" url="@ref core_api"/>
+      <tab type="user" title="Media" url="@ref media_api"/>
+      <tab type="user" title="Utils" url="@ref utils_api"/>
+    </tab>
+    
+    <tab type="usergroup" visible="yes" title="Guides">
+      <tab type="user" title="Getting Started" url="@ref getting_started_guide"/>
+      <tab type="user" title="Building" url="@ref building_guide"/>
+      <tab type="user" title="Contributing" url="@ref contributing_guide"/>
+      <tab type="user" title="Coding Style" url="@ref codingstyle"/>
+    </tab>
+    
+    <tab type="usergroup" visible="yes" title="Examples">
+      <tab type="user" title="Basic Pipeline" url="@ref basic_pipeline_example"/>
+      <tab type="user" title="Custom Module" url="@ref custom_module_example"/>
+      <tab type="user" title="Media Processing" url="@ref media_processing_example"/>
+    </tab>
+    
+    <tab type="namespaces" visible="yes" title="API Reference">
+      <tab type="namespacelist" visible="yes" title="" intro=""/>
+      <tab type="namespacemembers" visible="yes" title="" intro=""/>
+    </tab>
+    
+    <tab type="classes" visible="yes" title="">
+      <tab type="classlist" visible="yes" title="" intro=""/>
+      <tab type="classindex" visible="yes" title=""/>
+      <tab type="hierarchy" visible="yes" title="" intro=""/>
+      <tab type="classmembers" visible="yes" title="" intro=""/>
+    </tab>
+    
+    <tab type="files" visible="yes" title="">
+      <tab type="filelist" visible="yes" title="" intro=""/>
+      <tab type="globals" visible="yes" title="" intro=""/>
+    </tab>
+  </navindex>
+</doxygenlayout>

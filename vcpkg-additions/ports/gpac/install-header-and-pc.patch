@@ -1,0 +1,20 @@
+diff --git a/Makefile b/Makefile
+index 61241cd..84eb775 100644
+--- a/Makefile
++++ b/Makefile
+@@ -110,6 +110,7 @@ dep:	depend
+ install:
+ 	$(INSTALL) -d "$(DESTDIR)$(prefix)"
+ 	$(INSTALL) -d "$(DESTDIR)$(prefix)/$(libdir)"
++	$(INSTALL) -d "$(DESTDIR)$(prefix)/$(libdir)/pkgconfig"
+ 	$(INSTALL) -d "$(DESTDIR)$(prefix)/bin"
+ ifeq ($(DISABLE_ISOFF), no)
+ 	if [ -f bin/gcc/MP4Box$(EXE_SUFFIX) ] ; then \
+@@ -179,6 +180,7 @@ else
+ 	cp --no-preserve=mode,ownership,timestamp $(SRC_PATH)/shaders/* $(DESTDIR)$(prefix)/share/gpac/shaders/
+ 	cp -R --no-preserve=mode,ownership,timestamp $(SRC_PATH)/include/* $(DESTDIR)$(prefix)/include/
+ endif
++	$(INSTALL) $(INSTFLAGS) -m 644 config.h "$(DESTDIR)$(prefix)/include/gpac/configuration.h"
+ 
+ lninstall:
+ 	$(INSTALL) -d "$(DESTDIR)$(prefix)"

@@ -3,8 +3,8 @@
 #include <cassert>
 #include <ctime>
 #include <iostream>
-#include "lib_utils/system_clock.hpp"
-#include "lib_utils/format.hpp"
+#include "system_clock.hpp"
+#include "format.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -174,9 +174,5 @@ void setGlobalLogLevel(Level level) {
 
 void setGlobalLogColor(bool enable) {
 	consoleLogger.setColor(enable);
-}
-
-void throw_dynamic_cast_error(const char* typeName) {
-	throw std::runtime_error("dynamic cast error: could not convert from Modules::Data to " + std::string(typeName));
 }
 

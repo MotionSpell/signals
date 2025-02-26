@@ -1,4 +1,4 @@
-#include "lib_utils/profiler.hpp"
+#include "profiler.hpp"
 #include <csignal>
 #include <iostream> // cerr
 

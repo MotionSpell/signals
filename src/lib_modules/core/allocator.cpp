@@ -1,5 +1,5 @@
 #include "allocator.hpp"
-#include "lib_utils/queue.hpp"
+#include "queue.hpp"
 
 #include <stdexcept>
 #include <cassert>

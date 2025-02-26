@@ -63,7 +63,9 @@ unittest("pipeline: exceptions are propagated") {
 
 	Pipeline p;
 	std::string error;
-	p.registerErrorCallback([&](const char *str) { error = str; });
+	p.registerErrorCallback([&](const char *str) {
+		error = str;
+	});
 	p.addModule<ModuleException>();
 	p.start();
 	p.waitForEndOfStream();

@@ -1,0 +1,82 @@
+name: Mac Build
+
+on:
+  push:
+    branches:
+      - vcpkg-cmake
+  pull_request:
+    branches:
+      - vcpkg-cmake
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Set up environment variables
+      run: |
+        echo "BUILD_DIR=${{ github.workspace }}" >> $GITHUB_ENV
+
+    - name: Install dependencies
+      run: |
+        brew update && \
+        brew install \
+          cmake \
+          ninja \
+          pkg-config \
+          yasm \
+          nasm \
+          autoconf \
+          automake \
+          libtool \
+          python3 \
+          astyle   
+
+    - name: Initialize vcpkg submodule
+      run: |
+        git submodule update --init --recursive
+      
+    - name: Enable RTTI for Irrlicht in vcpkg
+      run: |
+        sed -i '' 's/PROPERTIES COMPILE_FLAGS -fno-rtti/PROPERTIES COMPILE_FLAGS -frtti/' vcpkg/ports/irrlicht/CMakeLists.txt
+
+
+    - name: Bootstrap vcpkg
+      run: |
+        ./vcpkg/bootstrap-vcpkg.sh
+
+    - name: Configure CMake
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        cmake --preset mac-production
+
+    - name: Build the project
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        cmake --build build --preset mac-production  --parallel $(sysctl -n hw.logicalcpu)
+
+    - name: Prepare test environment
+      run: |
+        cd ${{ env.BUILD_DIR }} && \
+        cp ./build/bin/unittests.exe ./build/lib/
+    - name: Run tests
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        ./build/lib/unittests.exe
+
+    - name: Upload logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: |
+          ${{ env.BUILD_DIR }}/build/CMakeFiles/CMakeOutput.log
+          ${{ env.BUILD_DIR }}/build/CMakeFiles/CMakeError.log
+          ${{ env.BUILD_DIR }}/vcpkg/buildtrees/**/*.log
+        retention-days: 5

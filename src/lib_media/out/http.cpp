@@ -27,7 +27,7 @@ HTTP::HTTP(KHost* host, HttpOutputConfig const& cfg)
 	// create pins
 	outputFinished = addOutput();
 
-    const int maxConnectFailCount = 3;
+	const int maxConnectFailCount = 3;
 	m_sender = createHttpSender({cfg.url, cfg.userAgent, cfg.flags.request, cfg.headers, maxConnectFailCount}, m_host);
 }
 

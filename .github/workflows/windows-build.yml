@@ -1,0 +1,97 @@
+name: Windows Build 
+
+on:
+  push:
+    branches:
+      - vcpkg-cmake
+  pull_request:
+    branches:
+      - vcpkg-cmake
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Set up environment variables
+      run: |
+        echo "BUILD_DIR=$env:GITHUB_WORKSPACE" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "VCPKG_DEFAULT_TRIPLET=x64-mingw-dynamic" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      shell: pwsh
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          git
+          make
+          curl         
+        msystem: MINGW64  
+
+    - name: Set MSYS2 path
+      run: |
+        echo "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "MSYSTEM=MINGW64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      shell: pwsh
+
+    - name: Update MSYS2 and install dependencies
+      run: |
+        C:\msys64\usr\bin\bash.exe -c "pacman -Syu --noconfirm"
+        C:\msys64\usr\bin\bash.exe -c "pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-pkg-config mingw-w64-x86_64-nasm mingw-w64-x86_64-yasm mingw-w64-x86_64-autotools mingw-w64-x86_64-gcc git make curl mingw-w64-x86_64-libtool mingw-w64-x86_64-python3 mingw-w64-x86_64-ca-certificates mingw-w64-x86_64-astyle"
+      shell: cmd
+    
+    - name: Check MSYS2 runtime and toolchain version
+      run: |
+        C:\msys64\usr\bin\bash.exe -c "pacman -Qi msys2-runtime"
+        C:\msys64\usr\bin\bash.exe -c "gcc --version"
+        C:\msys64\usr\bin\bash.exe -c "pacman -Qs mingw-w64"
+      shell: cmd
+
+    - name: Setup vcpkg
+      run: |
+        git submodule update --init --recursive
+        git -C .\vcpkg pull origin master
+        .\vcpkg\bootstrap-vcpkg.bat
+      shell: cmd
+
+    - name: Configure CMake
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        cmake --preset mingw-production
+      shell: bash
+
+    - name: Build
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build build --preset mingw-production --parallel $(nproc)
+      shell: bash
+
+    - name: Prepare test environment
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        cp build/bin/unittests.exe build/lib/
+      shell: cmd
+
+    - name: Test
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        ${{ env.BUILD_DIR }}/build/bin/unittests.exe
+      shell: cmd
+
+    - name: Upload logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: |
+          ${{ env.BUILD_DIR }}/build/CMakeFiles/CMakeOutput.log
+          ${{ env.BUILD_DIR }}/build/CMakeFiles/CMakeError.log
+          ${{ env.BUILD_DIR }}/vcpkg/buildtrees/**/*.log
+        retention-days: 5

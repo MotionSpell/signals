@@ -1,7 +1,7 @@
 #include "connection.hpp"
 #include "metadata.hpp"
 #include "lib_signals/signal.hpp"
-#include "lib_utils/log.hpp" // g_Log
+#include "log.hpp" // g_Log
 #include <stdexcept>
 
 namespace Modules {
