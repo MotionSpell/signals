@@ -45,7 +45,9 @@ else()
         message(ERROR "Unknown target ${TARGET_TRIPLET}")
     endif()
 
-
+    vcpkg_cmake_get_vars(cmake_vars_file)
+    include("${cmake_vars_file}")
+    
     vcpkg_configure_make(
         SOURCE_PATH "${SOURCE_PATH}"
         DETERMINE_BUILD_TRIPLET
