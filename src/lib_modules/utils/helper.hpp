@@ -81,7 +81,6 @@ class Module : public IModule {
 			return (int)outputs.size();
 		}
 		IOutput* getOutput(int i) override {
-			IOutput* output = outputs[i].get();
 			return outputs[i].get();
 		}
 
