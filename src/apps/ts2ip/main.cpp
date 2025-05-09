@@ -38,11 +38,11 @@ Config parseCommandLine(int argc, char const* argv[]) {
 	cfg.path = files[0];
 
 	if(sscanf(files[1].c_str(), "%d.%d.%d.%d:%d",
-	        &cfg.udpConfig.ipAddr[0],
-	        &cfg.udpConfig.ipAddr[1],
-	        &cfg.udpConfig.ipAddr[2],
-	        &cfg.udpConfig.ipAddr[3],
-	        &cfg.udpConfig.port) != 5)
+	    &cfg.udpConfig.ipAddr[0],
+	    &cfg.udpConfig.ipAddr[1],
+	    &cfg.udpConfig.ipAddr[2],
+	    &cfg.udpConfig.ipAddr[3],
+	    &cfg.udpConfig.port) != 5)
 		throw runtime_error("invalid destination address format");
 
 	return cfg;

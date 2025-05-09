@@ -49,15 +49,15 @@ chunk-last.ts
 	cfg.filePuller = &fs;
 	auto demux = loadModule("HlsDemuxer", &NullHost, &cfg);
 	for(int i=0;i < 100;++i)
-	demux->process();
+		demux->process();
 	ASSERT_EQUALS(
-	vector<string>({
-		"http://test.com/playlist.m3u8",
-		"http://test.com/sub.m3u8",
-		"http://test.com/chunk-01.ts",
-		"http://test.com/chunk-next.ts",
-		"http://test.com/chunk-last.ts",
-	}),
-	fs.requests);
+	    vector<string>({
+	            "http://test.com/playlist.m3u8",
+	            "http://test.com/sub.m3u8",
+	            "http://test.com/chunk-01.ts",
+	            "http://test.com/chunk-next.ts",
+	            "http://test.com/chunk-last.ts",
+	        }),
+	    fs.requests);
 }
 

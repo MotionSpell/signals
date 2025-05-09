@@ -54,8 +54,8 @@ class JPEGTurboEncode : public ModuleS {
 				}
 
 				if (tjCompressFromYUVPlanes(jtHandle,
-				        srcSlice, videoData->getFormat().res.width, srcStride, videoData->getFormat().res.height, TJSAMP_420,
-				        &buf, &jpegSize, quality, TJFLAG_NOREALLOC | TJFLAG_FASTDCT)) {
+				    srcSlice, videoData->getFormat().res.width, srcStride, videoData->getFormat().res.height, TJSAMP_420,
+				    &buf, &jpegSize, quality, TJFLAG_NOREALLOC | TJFLAG_FASTDCT)) {
 					m_host->log(Warning, "error encountered while compressing (YUV).");
 					return;
 				}

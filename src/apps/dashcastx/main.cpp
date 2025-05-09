@@ -14,7 +14,7 @@ static void parseValue(Video& var, ArgQueue& args) {
 	auto word = safePop(args);
 
 	auto const parsed = sscanf(word.c_str(), "%dx%d:%d:%d",
-	        &var.res.width, &var.res.height, &var.bitrate, &var.type);
+	    &var.res.width, &var.res.height, &var.bitrate, &var.type);
 
 	if (parsed < 2 || parsed > 4) //bitrate is optional
 		throw std::runtime_error("Invalid video format, expected WxH[:b[:t]] format (e.g 1920x1080:128)");

@@ -51,8 +51,8 @@ class GPACDemuxMP4Simple : public Module {
 				std::unique_ptr<gpacpp::IsoSample> ISOSample = reader->movie->getSample(reader->trackNumber, reader->sampleIndex, sampleDescriptionIndex);
 
 				m_host->log(Debug, format("Found sample #%s/%s of length %s, RAP %s, DTS: %s, CTS: %s",
-				        reader->sampleIndex, reader->sampleCount, ISOSample->dataLength,
-				        ISOSample->IsRAP, ISOSample->DTS + DTSOffset, ISOSample->DTS + DTSOffset + ISOSample->CTS_Offset).c_str());
+				    reader->sampleIndex, reader->sampleCount, ISOSample->dataLength,
+				    ISOSample->IsRAP, ISOSample->DTS + DTSOffset, ISOSample->DTS + DTSOffset + ISOSample->CTS_Offset).c_str());
 				reader->sampleIndex++;
 
 				auto out = output->allocData<DataRaw>(ISOSample->dataLength);

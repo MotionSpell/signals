@@ -29,53 +29,53 @@ static const char xmlTestData[] = R"(
 
 unittest("SAX XML parser: normal")
 {
-   std::vector<std::string> tagsS, tagsE;
-   auto onNodeStart = [&](std::string name, std::map<std::string, std::string> &attributes) {
-      (void)attributes;
-      tagsS.push_back(name);
-   };
-   auto onNodeEnd = [&](std::string name, std::string /*content*/) {
-      tagsE.push_back(name);
-   };
+	std::vector<std::string> tagsS, tagsE;
+	auto onNodeStart = [&](std::string name, std::map<std::string, std::string> &attributes) {
+		(void)attributes;
+		tagsS.push_back(name);
+	};
+	auto onNodeEnd = [&](std::string name, std::string /*content*/) {
+		tagsE.push_back(name);
+	};
 
-   auto expectedS = std::vector<std::string>({
-       "MPD",
-       "ProgramInformation",
-       "Title",
-       "BaseURL",
-       "Period",
-       "AdaptationSet",
-       "Role",
-       "SegmentTemplate",
-       "Representation",
-       "AudioChannelConfiguration",
-       "AdaptationSet",
-       "Role",
-       "SegmentTemplate",
-       "Representation",
-   });
+	auto expectedS = std::vector<std::string>({
+	            "MPD",
+	            "ProgramInformation",
+	            "Title",
+	            "BaseURL",
+	            "Period",
+	            "AdaptationSet",
+	            "Role",
+	            "SegmentTemplate",
+	            "Representation",
+	            "AudioChannelConfiguration",
+	            "AdaptationSet",
+	            "Role",
+	            "SegmentTemplate",
+	            "Representation",
+	        });
 
-   auto expectedE = std::vector<std::string>({
-       "Title",
-       "ProgramInformation",
-       "BaseURL",
-       "",
-       "",
-       "",
-       "Representation",
-	   "AdaptationSet",
-       "",
-       "",
-       "",
-       "AdaptationSet",
-       "Period",
-       "MPD",
-   });
+	auto expectedE = std::vector<std::string>({
+	            "Title",
+	            "ProgramInformation",
+	            "BaseURL",
+	            "",
+	            "",
+	            "",
+	            "Representation",
+	            "AdaptationSet",
+	            "",
+	            "",
+	            "",
+	            "AdaptationSet",
+	            "Period",
+	            "MPD",
+	        });
 
-   saxParse(xmlTestData, onNodeStart, onNodeEnd);
+	saxParse(xmlTestData, onNodeStart, onNodeEnd);
 
-   ASSERT_EQUALS(expectedS, tagsS);
-   ASSERT_EQUALS(expectedE, tagsE);
+	ASSERT_EQUALS(expectedS, tagsS);
+	ASSERT_EQUALS(expectedE, tagsE);
 }
 
 
@@ -92,12 +92,12 @@ static const char xmlTestDataContent[] = R"(
 )";
 
 unittest("SAX XML parser: get element contents") {
-   std::vector<std::string> contents;
+	std::vector<std::string> contents;
 	auto onNodeStart = [&](std::string, std::map<std::string, std::string>&) {};
 	auto onNodeEnd = [&](std::string, std::string content) { contents.push_back(content); };
 
 	saxParse(xmlTestDataContent, onNodeStart, onNodeEnd);
-   ASSERT_EQUALS( std::vector<std::string>({"a", "c", "d", ""}), contents);
+	ASSERT_EQUALS( std::vector<std::string>({"a", "c", "d", ""}), contents);
 }
 
 static const char invalidXmlTestData[] = R"(

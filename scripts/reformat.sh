@@ -45,11 +45,11 @@ function reformat_one_file
 
 # Use more portable find syntax
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  find . \( -name "*.hpp" -o -name "*.cpp" \) | while read f ; do
+  find . \( -name "*.hpp" -o -name "*.cpp" \) | grep -v vcpkg | while read f ; do
     reformat_one_file "$f" &
   done
 else
-  find -name "*.hpp" -or -name "*.cpp" | while read f ; do
+  find -name "*.hpp" -or -name "*.cpp" | grep -v vcpkg | while read f ; do
     reformat_one_file "$f" &
   done
 fi

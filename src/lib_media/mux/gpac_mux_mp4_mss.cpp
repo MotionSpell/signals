@@ -32,15 +32,15 @@ class GPACMuxMP4MSS : public GPACMuxMP4 {
 GPACMuxMP4MSS::GPACMuxMP4MSS(KHost* host, Mp4MuxConfigMss& cfg)
 	: GPACMuxMP4(host,
 	      Mp4MuxConfig{
-	.baseName = cfg.baseName,
-	cfg.segmentDurationInMs,
-	IndependentSegment,
-	OneFragmentPerSegment,
-	SmoothStreaming | Browsers | NoEditLists | (!cfg.audioName.empty() ? SegConstantDur : None) | ((!cfg.audioLang.empty() || cfg.audioName.empty()) ? ExactInputDur : None),
-	cfg.utcStartTime,
-}),
-audioLang(cfg.audioLang),
-audioName(cfg.audioName) {
+	          .baseName = cfg.baseName,
+	          cfg.segmentDurationInMs,
+	          IndependentSegment,
+	          OneFragmentPerSegment,
+	          SmoothStreaming | Browsers | NoEditLists | (!cfg.audioName.empty() ? SegConstantDur : None) | ((!cfg.audioLang.empty() || cfg.audioName.empty()) ? ExactInputDur : None),
+	          cfg.utcStartTime,
+	      }),
+	  audioLang(cfg.audioLang),
+	  audioName(cfg.audioName) {
 }
 
 void GPACMuxMP4MSS::declareStreamAudio(const MetadataPktAudio* metadata) {

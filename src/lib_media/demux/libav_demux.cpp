@@ -148,10 +148,10 @@ struct LibavDemux : Module {
 			// Create metadata based on stream type
 			std::shared_ptr<const IMetadata> m;
 			switch (st->codecpar->codec_type) {
-			case AVMEDIA_TYPE_AUDIO: m = createMetadataPktLibavAudio(codecCtx.get()); break;
-			case AVMEDIA_TYPE_VIDEO: m = createMetadataPktLibavVideo(codecCtx.get()); break;
-			case AVMEDIA_TYPE_SUBTITLE: m = createMetadataPktLibavSubtitle(codecCtx.get()); break;
-			default: break;
+		case AVMEDIA_TYPE_AUDIO: m = createMetadataPktLibavAudio(codecCtx.get()); break;
+		case AVMEDIA_TYPE_VIDEO: m = createMetadataPktLibavVideo(codecCtx.get()); break;
+		case AVMEDIA_TYPE_SUBTITLE: m = createMetadataPktLibavSubtitle(codecCtx.get()); break;
+		default: break;
 			}
 
 			// Container-specific codec string assignment
@@ -160,18 +160,18 @@ struct LibavDemux : Module {
 				auto const container = std::string(m_formatCtx->iformat->name);
 				if(container.substr(0, 4) == "mov,") {
 					switch(st->codecpar->codec_id) {
-					case AV_CODEC_ID_H264: meta->codec = "h264_avcc"; break;
-					case AV_CODEC_ID_HEVC: meta->codec = "hevc_avcc"; break;
-					case AV_CODEC_ID_AAC: meta->codec = "aac_raw"; break;
-					default: break;
+				case AV_CODEC_ID_H264: meta->codec = "h264_avcc"; break;
+				case AV_CODEC_ID_HEVC: meta->codec = "hevc_avcc"; break;
+				case AV_CODEC_ID_AAC: meta->codec = "aac_raw"; break;
+				default: break;
 					}
 				} else if(container == "mpegts") {
 					switch(st->codecpar->codec_id) {
-					case AV_CODEC_ID_H264: meta->codec = "h264_annexb"; break;
-					case AV_CODEC_ID_HEVC: meta->codec = "hevc_annexb"; break;
-					case AV_CODEC_ID_AAC: meta->codec = "aac_adts"; break;
-					case AV_CODEC_ID_AAC_LATM: meta->codec = "aac_latm"; break;
-					default: break;
+				case AV_CODEC_ID_H264: meta->codec = "h264_annexb"; break;
+				case AV_CODEC_ID_HEVC: meta->codec = "hevc_annexb"; break;
+				case AV_CODEC_ID_AAC: meta->codec = "aac_adts"; break;
+				case AV_CODEC_ID_AAC_LATM: meta->codec = "aac_latm"; break;
+				default: break;
 					}
 				}
 			}
@@ -327,7 +327,7 @@ struct LibavDemux : Module {
 			    && (1LL << stream->pts_wrap_bits) - demuxStream.lastDTS < thresholdInBase && pkt.dts + (1LL << stream->pts_wrap_bits) > demuxStream.lastDTS) {
 				demuxStream.offsetIn180k += timescaleToClock((1LL << stream->pts_wrap_bits) * stream->time_base.num, stream->time_base.den);
 				m_host->log(Warning, format("Stream %s: overflow detecting on DTS (%s, last=%s, timescale=%s/%s, offset=%s).",
-				        pkt.stream_index, pkt.dts, demuxStream.lastDTS, stream->time_base.num, stream->time_base.den, clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den)).c_str());
+				    pkt.stream_index, pkt.dts, demuxStream.lastDTS, stream->time_base.num, stream->time_base.den, clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den)).c_str());
 			}
 		}
 
@@ -336,7 +336,7 @@ struct LibavDemux : Module {
 			if (pkt.pts < pkt.dts && (1LL << stream->pts_wrap_bits) + pkt.pts - pkt.dts < thresholdInBase) {
 				auto const localOffsetIn180k = timescaleToClock((1LL << stream->pts_wrap_bits) * stream->time_base.num, stream->time_base.den);
 				m_host->log(Warning, format("Stream %s: overflow detecting on PTS (%s, new=%s, timescale=%s/%s, offset=%s).",
-				        pkt.stream_index, pkt.pts, pkt.pts + localOffsetIn180k, stream->time_base.num, stream->time_base.den, clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den)).c_str());
+				    pkt.stream_index, pkt.pts, pkt.pts + localOffsetIn180k, stream->time_base.num, stream->time_base.den, clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den)).c_str());
 				pkt.pts += localOffsetIn180k;
 			}
 		}
