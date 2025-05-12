@@ -95,6 +95,17 @@ struct AdaptiveStreamer : ModuleDynI {
 			}
 
 			while(schedule()) { }
+
+			if (!manifestPublished) {
+				for(auto repIdx : getInputs()) {
+					auto& quality = qualities[repIdx];
+					auto const &meta = quality.getMeta();
+					if (!meta)
+						return;
+				}
+				onNewSegment();
+				manifestPublished = true;
+			}
 		}
 
 		void flush() override {
@@ -117,6 +128,7 @@ struct AdaptiveStreamer : ModuleDynI {
 		OutputDefault* outputSegments;
 		OutputDefault* outputManifest;
 		bool wasInit = false;
+		bool manifestPublished = false;
 
 		void processInitSegment(Quality const& quality, size_t index) {
 			auto const meta = quality.getMeta();
