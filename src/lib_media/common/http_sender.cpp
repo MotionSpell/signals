@@ -90,14 +90,13 @@ struct CurlHttpSender : HttpSender {
 			}
 
 			if(!data.len) {
+				if (connectFailCountExceeded)
+					throw std::runtime_error("http_sender too many connection failures");
+
 				// wait for flush finished, before returning
 				std::unique_lock<std::mutex> lock(m_mutex);
-				while(!allDataSent) {
-					if (connectFailCountExceeded) {
-						throw std::runtime_error("http_sender too many connection failures");
-					}
+				while(!allDataSent)
 					m_allDataSent.wait(lock);
-				}
 			}
 		}
 
@@ -111,7 +110,7 @@ struct CurlHttpSender : HttpSender {
 			auto res = curl_easy_perform(curl);
 			if (res != CURLE_OK) {
 				m_log->log(Warning, (std::string("Transfer failed: ") + curl_easy_strerror(res)).c_str());
-				if (res == CURLE_COULDNT_CONNECT)
+				if (res == CURLE_COULDNT_CONNECT || res == CURLE_GOT_NOTHING)
 					connectFailCount++;
 			} else {
 				connectFailCount = 0;

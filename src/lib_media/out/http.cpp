@@ -1,6 +1,7 @@
 #include "http.hpp"
 #include "lib_modules/utils/factory.hpp" // registerModule
 #include "lib_utils/format.hpp"
+#include "lib_utils/log_sink.hpp"
 #include "lib_utils/tools.hpp" // enforce
 #include "../common/http_sender.hpp"
 
@@ -36,7 +37,11 @@ HTTP::~HTTP() {
 }
 
 void HTTP::flush() {
-	m_sender->send({});
+	try {
+		m_sender->send({});
+	} catch (std::exception const& e) {
+		m_host->log(Warning, format("HTTP: %s", e.what()).c_str());
+	}
 
 	auto out = outputFinished->allocData<DataRaw>(0);
 	outputFinished->post(out);

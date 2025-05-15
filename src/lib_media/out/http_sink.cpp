@@ -28,6 +28,14 @@ struct HttpSink : Modules::ModuleS {
 			: m_host(host),
 			  baseURL(baseURL), userAgent(userAgent), headers(headers) {
 			done = false;
+
+			HttpOutputConfig httpConfig {};
+			httpConfig.flags.InitialEmptyPost = true; // we want immediate failure if the URL is not reachable
+			httpConfig.flags.request = POST;
+			httpConfig.url = baseURL;
+			httpConfig.userAgent = userAgent;
+			httpConfig.headers = headers;
+			auto http = Modules::createModule<Modules::Out::HTTP>(m_host, httpConfig);
 		}
 		~HttpSink() {
 			done = true;
@@ -76,7 +84,6 @@ struct HttpSink : Modules::ModuleS {
 		}
 
 	private:
-
 		Modules::KHost* const m_host;
 		atomic_bool done;
 		map<string, shared_ptr<Modules::Out::HTTP>> zeroSizeConnections;
