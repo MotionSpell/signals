@@ -330,7 +330,7 @@ struct AdaptiveStreamer : ModuleDynI {
 				ensureStartTime();
 				onNewSegment();
 				totalDurationInMs += segDurationInMs;
-				m_host->log(Info, format("Processes segment (total processed: %ss)", totalDurationInMs / 1000.0).c_str());
+				m_host->log(Debug, format("Processes segment (total processed: %ss)", totalDurationInMs / 1000.0).c_str());
 
 				for (auto& quality : qualities)
 					quality.curSegDurIn180k = 0;
