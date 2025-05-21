@@ -33,7 +33,8 @@ HTTP::HTTP(KHost* host, HttpOutputConfig const& cfg)
 }
 
 HTTP::~HTTP() {
-	m_sender->send({m_suffixData.data(), m_suffixData.size()});
+	if (!m_suffixData.empty())
+		m_sender->send({m_suffixData.data(), m_suffixData.size()});
 }
 
 void HTTP::flush() {
