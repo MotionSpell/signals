@@ -226,6 +226,8 @@ void Pipeline::registerErrorCallback(std::function<void(const char*)> cbk) {
 
 void Pipeline::exception(std::exception_ptr eptr) {
 	try {
+		if (errorCbk)
+			errorCbk("Pipeline exception caught.");
 		std::rethrow_exception(eptr);
 	} catch (const std::exception &e) {
 		m_log->log(Error, format("Pipeline: exception caught: %s", e.what()).c_str());

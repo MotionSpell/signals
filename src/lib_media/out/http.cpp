@@ -42,6 +42,7 @@ void HTTP::flush() {
 		m_sender->send({});
 	} catch (std::exception const& e) {
 		m_host->log(Warning, format("HTTP: %s", e.what()).c_str());
+		throw;
 	}
 
 	auto out = outputFinished->allocData<DataRaw>(0);

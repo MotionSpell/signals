@@ -95,7 +95,7 @@ struct CurlHttpSender : HttpSender {
 
 				// wait for flush finished, before returning
 				std::unique_lock<std::mutex> lock(m_mutex);
-				while(!allDataSent)
+				while(!allDataSent && !connectFailCountExceeded)
 					m_allDataSent.wait(lock);
 			}
 		}

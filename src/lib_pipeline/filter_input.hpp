@@ -79,7 +79,8 @@ class FilterInput : public IInput {
 				delegate->push(data);
 			} catch(std::exception const& e) {
 				m_host->log(Error, (std::string("Can't process data: ") + e.what()).c_str());
-				throw;
+				eventSink->exception(std::current_exception());
+				throw; // let the executor decide if it can continue
 			}
 		}
 
