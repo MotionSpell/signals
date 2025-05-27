@@ -406,14 +406,14 @@ class Dasher : public AdaptiveStreamer {
 					throw error("Tile info size different from the number of inputs.");
 
 			// create manifest
-			auto xml = createManifest(m_cfg);
+			auto xml = createManifest(m_cfg, !manifestPublished);
 
 			// post manifest
 			if (live)
 				postManifest(xml);
 		}
 
-		std::string createManifest(DasherConfig m_cfg) {
+		std::string createManifest(DasherConfig m_cfg, bool dryRun) {
 			MPD mpd {};
 			if (live)
 				mpd.minimum_update_period = 1000;
@@ -544,12 +544,15 @@ class Dasher : public AdaptiveStreamer {
 							nextSegFilename = getPrefixedSegmentName(quality, repIdx, n + 1);
 					}
 
+					as.representations.push_back(rep);
+
+					if (dryRun)
+						continue;
+
 					postSegment(quality, segFilename, nextSegFilename);
 
 					if (m_cfg.timeShiftBufferDepthInMs)
 						deleteOldSegments(quality);
-
-					as.representations.push_back(rep);
 				}
 
 				for(auto &as : adaptationSets)
@@ -638,7 +641,7 @@ class Dasher : public AdaptiveStreamer {
 				cfg.live = false;
 				cfg.minUpdatePeriodInMs = 0;
 				totalDurationInMs -= segDurationInMs;
-				auto xml = createManifest(cfg);
+				auto xml = createManifest(cfg, false);
 				postManifest(xml);
 			}
 		}
