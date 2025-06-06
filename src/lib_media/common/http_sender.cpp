@@ -70,7 +70,12 @@ struct CurlHttpSender : HttpSender {
 		}
 
 		~CurlHttpSender() {
-			destroying = true;
+			{
+				std::unique_lock<std::mutex> lock(m_mutex);
+				destroying = true;
+				endOfDataFlag = true;
+				m_dataReady.notify_one();
+			}
 			curlThread.join();
 		}
 
@@ -175,8 +180,11 @@ struct CurlHttpSender : HttpSender {
 				return 0;
 
 			// wait for new data
-			while(m_fifo.empty() && !endOfDataFlag)
+			while(m_fifo.empty() && !endOfDataFlag && !destroying) {
 				m_dataReady.wait(lock);
+			}
+			if(destroying)
+				return 0;
 
 			auto const N = std::min<int>(buffer.len, m_fifo.size());
 			if(N > 0) {
