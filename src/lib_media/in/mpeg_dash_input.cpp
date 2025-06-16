@@ -147,9 +147,8 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 				// Note that mediaPresentationDuration is in seconds,
 				// so this will give a value that is too low (at most one second).
 				stream->currNumber += int64_t((stream->segmentDuration.inverse() * mpd->mediaPresentationDuration));
-				int leeway = 1;
+				const int leeway = 1;
 				stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
-
 			} else {
 				auto now = mpd->publishTime;
 				if (!mpd->publishTime)
@@ -231,9 +230,8 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		}
 	}
 	if (empty) {
-		if (mpd->dynamic) {
-			int leeway = 1;
-			if (!stream->anySegmentDataReceived) leeway += 1;
+		if (mpd->dynamic && !stream->anySegmentDataReceived) {
+			const int leeway = 2; // go back from leeway-1 segment
 			stream->currNumber = std::max<int64_t>(stream->currNumber - leeway, rep->startNumber(mpd.get())); // too early, retry
 			return;
 		}
@@ -304,4 +302,3 @@ void MPEG_DASH_Input::disableStream(int asIdx) {
 
 }
 }
-
