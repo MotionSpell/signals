@@ -84,8 +84,8 @@ class VideoConvert : public ModuleS {
 			if (!m_SwContext)
 				throw error("Impossible to set up video converter.");
 			m_host->log(Info, format("Converter configured to: %sx%s:%s -> %sx%s:%s",
-			    srcFormat.res.width, srcFormat.res.height, (int)srcFormat.format,
-			    dstFormat.res.width, dstFormat.res.height, (int)dstFormat.format
+			        srcFormat.res.width, srcFormat.res.height, (int)srcFormat.format,
+			        dstFormat.res.width, dstFormat.res.height, (int)dstFormat.format
 			    ).c_str());
 			this->srcFormat = srcFormat;
 		}

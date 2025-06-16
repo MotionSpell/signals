@@ -110,12 +110,12 @@ static time_t pTimegm(struct tm * t) {
 int64_t parseDate(std::string s) {
 	int year, month, day, hour, minute, second;
 	int ret = sscanf(s.c_str(), "%04d-%02d-%02dT%02d:%02d:%02d",
-	    &year,
-	    &month,
-	    &day,
-	    &hour,
-	    &minute,
-	    &second);
+	        &year,
+	        &month,
+	        &day,
+	        &hour,
+	        &minute,
+	        &second);
 	if(ret != 6)
 		throw std::runtime_error("Invalid date '" + s + "'");
 

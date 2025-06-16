@@ -230,8 +230,8 @@ struct AudioConvert : ModuleS {
 			m_resampler->init();
 
 			m_host->log(Info, format("Converter configured to: %s -> %s",
-			    PcmFormatToString(srcFormat),
-			    PcmFormatToString(m_dstFormat)
+			        PcmFormatToString(srcFormat),
+			        PcmFormatToString(m_dstFormat)
 			    ).c_str());
 		}
 
