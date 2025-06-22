@@ -109,8 +109,8 @@ static time_t pTimegm(struct tm * t) {
 
 Fraction parseDate(std::string s) {
 	int year, month, day, hour, minute, timezonehour = 0, timezoneminute = 0;
-	float second;
-	int ret = sscanf(s.c_str(), "%04d-%02d-%02dT%02d:%02d:%f%03d:%02dZ",
+	double second;
+	int ret = sscanf(s.c_str(), "%04d-%02d-%02dT%02d:%02d:%lf%03d:%02dZ",
 	    &year,
 	    &month,
 	    &day,
