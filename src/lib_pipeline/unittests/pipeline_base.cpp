@@ -65,12 +65,18 @@ unittest("pipeline: exceptions are propagated") {
 	std::string error;
 	p.registerErrorCallback([&](const char *str) {
 		error = str;
+		return true;
 	});
 	p.addModule<ModuleException>();
 	p.start();
 	p.waitForEndOfStream();
 	ASSERT_EQUALS(expected, error);
 }
+
+//TODO: add more tests with:
+//- multithreaded
+//- non-source modules (code path is different and does not give control to the app/Exception cbk),
+//- different tests with return true/false in registerErrorCallback()
 
 unittest("pipeline: pipeline with split (no join)") {
 	Pipeline p;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib_modules/core/buffer.hpp" // Span
+#include "span.hpp"
 #include <cassert>
 
 struct BitWriter {

@@ -14,7 +14,7 @@ static void parseValue(Video& var, ArgQueue& args) {
 	auto word = safePop(args);
 
 	auto const parsed = sscanf(word.c_str(), "%dx%d:%d:%d",
-	        &var.res.width, &var.res.height, &var.bitrate, &var.type);
+	    &var.res.width, &var.res.height, &var.bitrate, &var.type);
 
 	if (parsed < 2 || parsed > 4) //bitrate is optional
 		throw std::runtime_error("Invalid video format, expected WxH[:b[:t]] format (e.g 1920x1080:128)");
@@ -79,27 +79,18 @@ Config parseCommandLine(int argc, char const* argv[]) {
 }
 
 extern std::unique_ptr<Pipelines::Pipeline> buildPipeline(const Config &config);
-static Pipelines::Pipeline *g_Pipeline = nullptr;
+extern std::shared_ptr<Pipelines::Pipeline> g_Pipeline;
 
 void safeMain(int argc, const char* argv[]) {
 	auto config = parseCommandLine(argc, argv);
 	if(config.help)
 		return;
-	auto pipeline = buildPipeline(config);
-	if(config.dumpGraph)
-		printf("%s\n", pipeline->dump().c_str());
 
-	g_Pipeline = pipeline.get();
+	g_Pipeline = buildPipeline(config);
+	if(config.dumpGraph)
+		printf("%s\n", g_Pipeline->dumpDOT().c_str());
 
 	Tools::Profiler profilerProcessing(format("%s - processing time", g_appName));
-	pipeline->start();
-	pipeline->waitForEndOfStream();
+	g_Pipeline->start();
+	g_Pipeline->waitForEndOfStream();
 }
-
-void safeStop() {
-	if (g_Pipeline) {
-		g_Pipeline->exitSync();
-		g_Pipeline = nullptr;
-	}
-}
-

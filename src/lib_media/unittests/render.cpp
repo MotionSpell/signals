@@ -1,6 +1,7 @@
 #include "tests/tests.hpp"
 #include "lib_modules/modules.hpp"
 #include "lib_modules/utils/loader.hpp"
+#include "lib_media/common/attributes.hpp"
 #include "lib_media/in/sound_generator.hpp"
 #include "lib_media/in/video_generator.hpp"
 #include "lib_utils/tools.hpp"
@@ -10,6 +11,7 @@
 
 using namespace Tests;
 using namespace Modules;
+using namespace std::chrono;
 
 namespace {
 
@@ -35,15 +37,13 @@ secondclasstest("render: sound generator, evil samples") {
 	fmt.sampleRate = 44100;
 	fmt.numPlanes = 1;
 
-	auto sample = make_shared<DataPcm>(0);
-	sample->setMediaTime(299454611464360LL);
-	sample->format = fmt;
-	sample->setSampleCount(100);
+	auto sample = make_shared<DataPcm>(100, fmt);
+	sample->set(PresentationTime{299454611464360LL});
 	render->getInput(0)->push(sample);
 	render->process();
 
 	// wait for crash
-	std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	std::this_thread::sleep_for(1ms);
 }
 
 secondclasstest("render: A/V sync, one thread") {
@@ -62,7 +62,7 @@ secondclasstest("render: A/V sync, one thread") {
 }
 
 auto createYuvPic(Resolution res) {
-	auto r = make_shared<DataPicture>(0);
+	auto r = make_shared<DataPicture>(res, PixelFormat::I420);
 	DataPicture::setup(r.get(), res, res, PixelFormat::I420);
 	return r;
 }
@@ -71,12 +71,12 @@ secondclasstest("render: dynamic resolution") {
 	auto videoRender = Modules::loadModule("SDLVideo", &NullHost, nullptr);
 
 	auto pic1 = createYuvPic(Resolution(128, 64));
-	pic1->setMediaTime(1000);
+	pic1->set(PresentationTime{1000});
 	videoRender->getInput(0)->push(pic1);
 	videoRender->process();
 
 	auto pic2 = createYuvPic(Resolution(64, 256));
-	pic2->setMediaTime(2000);
+	pic2->set(PresentationTime{2000});
 	videoRender->getInput(0)->push(pic2);
 	videoRender->process();
 }

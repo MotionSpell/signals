@@ -5,7 +5,7 @@
 namespace Pipelines {
 
 /* Wrapper around the module's inputs.
-   Data is queued in the calling thread, then always dispatched by the executor
+   Data is queued in the calling thread, then always dispatched by the executor.
    Data is nullptr at completion. */
 class FilterInput : public IInput {
 	public:
@@ -23,7 +23,7 @@ class FilterInput : public IInput {
 
 		void push(Data data) override {
 			queue.push(data);
-			statsPending->value ++;
+			statsPending->value++;
 
 			executor->call([this]() {
 				doProcess();
@@ -54,19 +54,18 @@ class FilterInput : public IInput {
 			delegate->disconnect();
 		}
 		Metadata getMetadata() const override {
-			return m_metadataCap.getMetadata();
+			return delegate->getMetadata();
 		}
 		bool updateMetadata(Data &data) override {
-			return m_metadataCap.updateMetadata(data);
+			return delegate->updateMetadata(data);
 		}
 
 	private:
-
 		void doProcess() {
 			try {
 				auto data = queue.pop();
 
-				statsPending->value --;
+				statsPending->value--;
 				statsCumulated->value = samplingCounter++;
 
 				// receiving 'nullptr' means 'end of stream'
@@ -79,8 +78,7 @@ class FilterInput : public IInput {
 				delegate->push(data);
 			} catch(std::exception const& e) {
 				m_host->log(Error, (std::string("Can't process data: ") + e.what()).c_str());
-				eventSink->exception(std::current_exception());
-				throw; // let the executor decide if it can continue
+				throw;
 			}
 		}
 
@@ -92,7 +90,6 @@ class FilterInput : public IInput {
 		decltype(StatsEntry::value) samplingCounter = 0;
 		StatsEntry * const statsCumulated;
 		StatsEntry * const statsPending;
-		MetadataCap m_metadataCap;
 };
 
 }

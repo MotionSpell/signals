@@ -35,7 +35,7 @@ struct BinaryBlockingExecutor {
 		void post(function<void()> fct) {
 			{
 				unique_lock<mutex> lock(m);
-				while (count == 0) {
+				while (count <= 0) {
 					if (eptr)
 						rethrow_exception(eptr);
 
@@ -80,7 +80,6 @@ struct MPEG_DASH_Input::Stream {
 	OutputDefault* out;
 	Representation const * rep;
 	bool initializationChunkSent = false;
-	bool anySegmentDataReceived = false;
 	int64_t currNumber = 0;
 	Fraction segmentDuration;
 	unique_ptr<IFilePuller> source;
@@ -141,30 +140,16 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 	for(auto& stream : m_streams) {
 		stream->currNumber = stream->rep->startNumber(mpd.get());
 		if(mpd->dynamic) {
-			if (mpd->mediaPresentationDuration) {
-				if (stream->segmentDuration.num == 0)
-					throw runtime_error("No duration for stream");
-				// Note that mediaPresentationDuration is in seconds,
-				// so this will give a value that is too low (at most one second).
-				stream->currNumber += int64_t((stream->segmentDuration.inverse() * mpd->mediaPresentationDuration));
-				const int leeway = 1;
-				stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
-			} else {
-				auto now = mpd->publishTime;
-				if (!mpd->publishTime)
-					now = (int64_t)getUTC();
+			auto now = mpd->publishTime;
+			if(!mpd->publishTime)
+				now = (int64_t)getUTC();
 
-				if (stream->segmentDuration.num == 0)
-					throw runtime_error("No duration for stream");
+			if (stream->segmentDuration.num == 0)
+				throw runtime_error("No duration for stream");
 
-				stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
-				// HACK: add one segment latency.
-				// HACK modified by jack: also add at least a second, to cater for the times
-				// in the MPD to have a 1-second resolution.
-				int leeway = 2;
-				leeway += int(stream->segmentDuration.inverse());
-				stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
-			}
+			stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
+			// HACK: add one segment latency
+			stream->currNumber = std::max<int64_t>(stream->currNumber-2, stream->rep->startNumber(mpd.get()));
 		}
 	}
 }
@@ -180,6 +165,7 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		// this adaptation set is disabled: move to the next step
 		if (stream->initializationChunkSent)
 			stream->currNumber++;
+
 		return;
 	}
 
@@ -207,6 +193,7 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		}
 	}
 
+	m_host->log(Debug, format("wget: '%s'", url).c_str());
 
 	bool empty = true;
 
@@ -217,28 +204,16 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		memcpy(data->buffer->data().ptr, chunk.ptr, chunk.len);
 		stream->out->post(data);
 	};
-	int retryCount = 20;
-	while(retryCount > 0) {
-		m_host->log(Debug, format("wget: '%s'", url).c_str());
-		stream->source->wget(url.c_str(), onBuffer);
-		m_host->log(Debug, format("wget done, empty=%s: '%s'", (int)empty, url).c_str());
-		retryCount--;
-		if (!empty) retryCount = 0;
-		if (!stream->anySegmentDataReceived) retryCount = 0;
-		if (retryCount > 0) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		}
-	}
+
+	stream->source->wget(url.c_str(), onBuffer);
+
 	if (empty) {
-		if (mpd->dynamic && !stream->anySegmentDataReceived) {
-			const int leeway = 2; // go back from leeway-1 segment
-			stream->currNumber = std::max<int64_t>(stream->currNumber - leeway, rep->startNumber(mpd.get())); // too early, retry
+		if (mpd->dynamic) {
+			stream->currNumber = std::max<int64_t>(stream->currNumber - 1, rep->startNumber(mpd.get())); // too early, retry
 			return;
 		}
 		m_host->log(Error, format("can't download file: '%s'", url).c_str());
 		m_host->activate(false);
-	} else {
-		stream->anySegmentDataReceived = stream->initializationChunkSent;
 	}
 
 	stream->initializationChunkSent = true;
@@ -255,6 +230,7 @@ void MPEG_DASH_Input::process() {
 		m_host->activate(false);
 		return;
 	}
+
 	for(auto& stream : m_streams)
 		stream->executor->post(std::bind(&MPEG_DASH_Input::processStream, this, stream.get()));
 }
@@ -302,3 +278,4 @@ void MPEG_DASH_Input::disableStream(int asIdx) {
 
 }
 }
+

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 struct IUtcStartTimeQuery {
 	virtual uint64_t query() const = 0;

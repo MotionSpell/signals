@@ -6,6 +6,7 @@
 using namespace Tests;
 using namespace Modules;
 using namespace Pipelines;
+using namespace std::chrono;
 
 unittest("pipeline: EOS injection (exitSync)") {
 	Pipeline p;
@@ -34,7 +35,7 @@ struct FakeTransformer : public Modules::ModuleS {
 		out = addOutput();
 	}
 	void processOne(Modules::Data) override {
-		out->post(out->allocData<DataRaw>(0));
+		out->post(out->allocData<DataRaw>(1));
 	}
 	Modules::OutputDefault* out;
 };
@@ -44,7 +45,7 @@ unittest("pipeline: destroy while running: fast producer, slow consumer") {
 		SlowSink(Modules::KHost*) {
 		}
 		void processOne(Modules::Data) override {
-			std::this_thread::sleep_for(std::chrono::milliseconds(20));
+			std::this_thread::sleep_for(20ms);
 		}
 	};
 
@@ -56,7 +57,7 @@ unittest("pipeline: destroy while running: fast producer, slow consumer") {
 	p->start();
 
 	// let InfiniteSource fill SlowSink's input queue
-	std::this_thread::sleep_for(std::chrono::milliseconds(80));
+	std::this_thread::sleep_for(80ms);
 }
 
 unittest("pipeline: destroy while running: long chain of modules") {
@@ -72,7 +73,7 @@ unittest("pipeline: destroy while running: long chain of modules") {
 		p->connect(trans2, trans3);
 		p->connect(trans3, sink);
 		p->start();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		std::this_thread::sleep_for(1ms);
 	}
 }
 

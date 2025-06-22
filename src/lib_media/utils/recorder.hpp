@@ -13,9 +13,9 @@ class Recorder : public ModuleS {
 		void flush() override;
 
 		Data pop();
+		bool tryPop(Data &data);
 
 	private:
-		KHost* const m_host;
 		Queue<Data> record;
 };
 

@@ -473,8 +473,8 @@ std::unique_ptr<Page> process_telx_packet(TeletextState &config, DataUnit dataUn
 			return nullptr;
 
 		if ((config.receivingData == Yes) && (
-		        ((config.transmissionMode == Serial) && (PAGE(pageNum) != PAGE(config.pageNum))) ||
-		        ((config.transmissionMode == Parallel) && (PAGE(pageNum) != PAGE(config.pageNum)) && (m == MAGAZINE(config.pageNum)))
+		    ((config.transmissionMode == Serial) && (PAGE(pageNum) != PAGE(config.pageNum))) ||
+		    ((config.transmissionMode == Parallel) && (PAGE(pageNum) != PAGE(config.pageNum)) && (m == MAGAZINE(config.pageNum)))
 		    )) {
 			config.receivingData = No;
 			return nullptr;

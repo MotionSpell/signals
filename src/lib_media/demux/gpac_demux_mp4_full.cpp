@@ -114,7 +114,7 @@ class GPACDemuxMP4Full : public ModuleS {
 			if (newSampleCount > reader.sampleCount) {
 				// New samples have been added to the file
 				m_host->log(Debug, format("Found %s new samples (total: %s)",
-				        newSampleCount - reader.sampleCount, newSampleCount).c_str());
+				    newSampleCount - reader.sampleCount, newSampleCount).c_str());
 				if (reader.sampleCount == 0) {
 					reader.sampleCount = newSampleCount;
 				}
@@ -132,14 +132,13 @@ class GPACDemuxMP4Full : public ModuleS {
 				auto const DTSOffset = reader.movie->getDTSOffset(FIRST_TRACK);
 				//here we dump some sample info: samp->data, samp->dataLength, samp->isRAP, samp->DTS, samp->CTS_Offset
 				m_host->log(Debug, format("Found sample #%s(#%s) of length %s , RAP: %s, DTS: %s, CTS: %s",
-				        reader.sampleIndex, sample->dataLength,
-				        sample->IsRAP, sample->DTS + DTSOffset, sample->DTS + DTSOffset + sample->CTS_Offset).c_str());
+				    reader.sampleIndex, sample->dataLength,
+				    sample->IsRAP, sample->DTS + DTSOffset, sample->DTS + DTSOffset + sample->CTS_Offset).c_str());
 				reader.sampleIndex++;
 
 				auto out = output->allocData<DataRaw>(sample->dataLength);
 				memcpy(out->buffer->data().ptr, sample->data, sample->dataLength);
-				out->setMediaTime(sample->DTS + DTSOffset + sample->CTS_Offset, reader.movie->getMediaTimescale(FIRST_TRACK));
-
+				out->set(PresentationTime{timescaleToClock((int64_t)(sample->DTS + DTSOffset + sample->CTS_Offset), reader.movie->getMediaTimescale(FIRST_TRACK))});
 				CueFlags flags {};
 				flags.keyframe = true;
 				out->set(flags);

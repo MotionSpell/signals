@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pixel_format.hpp"
-#include "lib_modules/core/buffer.hpp"
+#include "span.hpp"
 #include "lib_modules/utils/helper.hpp"
 #include "lib_media/common/resolution.hpp"
 #include "lib_utils/fraction.hpp" // divUp
@@ -36,6 +36,7 @@ struct PictureFormat {
 		case PixelFormat::NV12P010LE: return res.width * res.height * 3;
 		case PixelFormat::RGB24: return res.width * res.height * 3;
 		case PixelFormat::RGBA32: return res.width * res.height * 4;
+		case PixelFormat::CUDA: return sizeof(void**) * 4 * 2; // store 4 pairs of {ptr,stride}
 		default: throw std::runtime_error("Unknown pixel format. Please contact your vendor.");
 		}
 	}
@@ -46,14 +47,32 @@ struct PictureFormat {
 
 	Resolution res;
 	PixelFormat format = PixelFormat::UNKNOWN;
+	static auto const ALIGNMENT = 512 / 8; /*AVX-512*/
 };
 
-//TODO: we should probably separate planar vs non-planar data, avoid resize on the data, etc.
 class DataPicture : public DataRaw {
 	public:
-		DataPicture(size_t /*unused*/) : DataRaw(0) {}
-		static std::shared_ptr<DataPicture> create(OutputDefault *out, Resolution res, PixelFormat format);
-		static std::shared_ptr<DataPicture> create(OutputDefault *out, Resolution res, Resolution resInternal, PixelFormat format);
+		// padding as required by most SIMD processing (e.g swscale)
+		DataPicture(Resolution res, PixelFormat format)
+			: DataRaw(PictureFormat::getSize(res, format) + PictureFormat::ALIGNMENT + 512 / 8), format(res, format)  {
+			setup(this, res, res, format);
+		}
+		DataPicture(Resolution res, Resolution resInternal, PixelFormat format)
+			: DataRaw(PictureFormat::getSize(resInternal, format) + PictureFormat::ALIGNMENT + 512 / 8), format(res, format)  {
+			setup(this, res, resInternal, format);
+		}
+		std::shared_ptr<DataBase> clone() const override {
+			auto dataPic = std::make_shared<DataPicture>(format.res, format.format);
+			std::shared_ptr<DataBase> clone = dataPic;
+			DataBase::clone(this, clone.get());
+			dataPic->m_planeCount = m_planeCount;
+			for (int i=0; i<4; ++i) {
+				dataPic->m_stride[i] = m_stride[i];
+				dataPic->m_planes[i] = m_planes[i];
+			}
+			return clone;
+		}
+
 		static void setup(DataPicture* pic, Resolution res, Resolution resInternal, PixelFormat format);
 
 		PictureFormat getFormat() const {
@@ -88,10 +107,6 @@ class DataPicture : public DataRaw {
 		}
 
 	protected:
-		DataPicture(Resolution res, PixelFormat format)
-			: DataRaw(PictureFormat::getSize(res, format)), format(res, format)  {
-		}
-
 		PictureFormat format;
 
 		int m_planeCount = 0;

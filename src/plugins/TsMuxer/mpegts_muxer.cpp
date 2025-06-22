@@ -1,7 +1,6 @@
 #include "mpegts_muxer.hpp"
 #include "bit_writer.hpp"
 #include "pes.hpp"
-#include "lib_modules/utils/helper.hpp"
 #include "lib_modules/utils/helper_dyn.hpp"
 #include "lib_modules/utils/factory.hpp"
 #include "lib_utils/tools.hpp"
@@ -10,6 +9,7 @@
 #include "lib_media/common/attributes.hpp"
 #include <cassert>
 #include <string>
+
 static auto const TS_PACKET_SIZE = 188;
 
 using namespace Modules;

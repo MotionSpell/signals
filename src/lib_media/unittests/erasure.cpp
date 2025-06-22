@@ -1,6 +1,7 @@
 #include "tests/tests.hpp"
 #include "lib_modules/utils/loader.hpp"
 #include "lib_modules/modules.hpp"
+#include "lib_media/decode/decoder.hpp"
 #include "lib_media/demux/libav_demux.hpp"
 #include "lib_media/out/print.hpp"
 #include "lib_utils/tools.hpp"
@@ -11,7 +12,7 @@ using namespace Modules;
 
 namespace {
 
-secondclasstest("packet type erasure + multi-output: libav Demux -> {libav Decoder -> Out::Print}*") {
+unittest("packet type erasure + multi-output: libav Demux -> {libav Decoder -> Out::Print}*") {
 	DemuxConfig cfg;
 	cfg.url = "data/beepbop.mp4";
 	auto demux = loadModule("LibavDemux", &NullHost, &cfg);
@@ -20,7 +21,9 @@ secondclasstest("packet type erasure + multi-output: libav Demux -> {libav Decod
 	std::vector<std::shared_ptr<IModule>> printers;
 	for (int i = 0; i < demux->getNumOutputs(); ++i) {
 		auto metadata = demux->getOutput(i)->getMetadata();
-		auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)metadata->type);
+		DecoderConfig decCfg;
+		decCfg.type = metadata->type;
+		auto decode = loadModule("Decoder", &NullHost, &decCfg);
 
 		auto p = createModule<Out::Print>(&NullHost, std::cout);
 

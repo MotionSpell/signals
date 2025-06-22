@@ -29,7 +29,6 @@ Entry* findFreeEntry() {
 
 namespace Factory {
 int registerModule(const char* name, CreationFunc* func) {
-
 	if(findEntry(name))
 		throw runtime_error("Module '" + string(name) + "' is already registered");
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "lib_modules/core/buffer.hpp" // SpanC
+#include "span.hpp"
 #include <functional>
 #include <memory>
-#include <stdint.h>
+#include <cstdint>
 
 namespace Modules {
 namespace In {
@@ -11,6 +11,7 @@ namespace In {
 struct IFilePuller {
 	virtual ~IFilePuller() = default;
 	virtual void wget(const char* url, std::function<void(SpanC)> callback) = 0;
+	virtual void askToExit() = 0;
 };
 
 struct IFilePullerFactory {
@@ -29,8 +30,7 @@ namespace In {
 inline std::vector<uint8_t> download(Modules::In::IFilePuller* puller, const char* url) {
 	std::vector<uint8_t> r;
 	auto onBuffer = [&](SpanC buf) {
-		for(auto c : buf)
-			r.push_back(c);
+		r.insert(r.end(), buf.ptr, buf.ptr + buf.len);
 	};
 	puller->wget(url, onBuffer);
 	return r;

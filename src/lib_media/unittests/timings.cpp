@@ -2,9 +2,9 @@
 #include "lib_media/common/picture.hpp"
 #include "lib_media/common/metadata.hpp"
 #include "lib_media/common/attributes.hpp"
+#include "lib_media/decode/decoder.hpp"
 #include "lib_media/demux/libav_demux.hpp"
 #include "lib_media/demux/gpac_demux_mp4_simple.hpp"
-#include "lib_media/transform/audio_gap_filler.hpp"
 #include "lib_media/transform/restamp.hpp"
 #include "lib_media/transform/audio_convert.hpp"
 #include "lib_media/utils/recorder.hpp"
@@ -144,7 +144,9 @@ unittest("transcoder with reframers: test a/v sync recovery") {
 
 		auto gapper = createModule<Gapper>();
 		ConnectOutputToInput(demux->getOutput(i), gapper->getInput(0));
-		auto decoder = loadModule("Decoder", &NullHost, (void*)(uintptr_t)metadataDemux->type);
+		DecoderConfig decCfg;
+		decCfg.type = metadataDemux->type;
+		auto decoder = loadModule("Decoder", &NullHost, &decCfg);
 		ConnectOutputToInput(gapper->getOutput(0), decoder->getInput(0));
 
 		auto inputRes = safe_cast<const MetadataPktVideo>(demux->getOutput(i)->getMetadata())->resolution;
@@ -191,17 +193,17 @@ unittest("restamp: passthru with offsets") {
 	};
 	auto data = make_shared<DataRaw>(0);
 
-	data->setMediaTime(time);
+	data->set(PresentationTime{time});
 	auto restamp = createModule<Transform::Restamp>(&NullHost, Transform::Restamp::Reset);
 	ConnectOutput(restamp->getOutput(0), onFrame);
 	restamp->processOne(data);
 
-	data->setMediaTime(time);
+	data->set(PresentationTime{time});
 	restamp = createModule<Transform::Restamp>(&NullHost, Transform::Restamp::Reset, 0);
 	ConnectOutput(restamp->getOutput(0), onFrame);
 	restamp->processOne(data);
 
-	data->setMediaTime(time);
+	data->set(PresentationTime{time});
 	restamp = createModule<Transform::Restamp>(&NullHost, Transform::Restamp::Reset, time);
 	expected = time;
 	ConnectOutput(restamp->getOutput(0), onFrame);
@@ -217,23 +219,23 @@ unittest("restamp: reset with offsets") {
 	};
 	auto data = make_shared<DataRaw>(0);
 
-	data->setMediaTime(time);
+	data->set(PresentationTime{time});
 	auto restamp = createModule<Transform::Restamp>(&NullHost, Transform::Restamp::Passthru);
 	ConnectOutput(restamp->getOutput(0), onFrame);
 	restamp->processOne(data);
 
-	data->setMediaTime(time);
+	data->set(PresentationTime{time});
 	restamp = createModule<Transform::Restamp>(&NullHost, Transform::Restamp::Passthru, 0);
 	ConnectOutput(restamp->getOutput(0), onFrame);
 	restamp->processOne(data);
 
-	data->setMediaTime(time);
+	data->set(PresentationTime{time});
 	restamp = createModule<Transform::Restamp>(&NullHost, Transform::Restamp::Passthru, offset);
 	expected = time + offset;
 	ConnectOutput(restamp->getOutput(0), onFrame);
 	restamp->processOne(data);
 
-	data->setMediaTime(time);
+	data->set(PresentationTime{time});
 	restamp = createModule<Transform::Restamp>(&NullHost, Transform::Restamp::Passthru, time);
 	expected = time + time;
 	ConnectOutput(restamp->getOutput(0), onFrame);

@@ -4,7 +4,6 @@
 #include <ctime>
 #include <iostream>
 #include "system_clock.hpp"
-#include "format.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -22,15 +21,6 @@ static WORD console_attr_ori = 0;
 #define RESET  "\x1b[0m"
 #endif /*_WIN32*/
 
-static std::ostream& get(Level level) {
-	switch (level) {
-	case Info:
-		return std::cout;
-	default:
-		return std::cerr;
-	}
-}
-
 static std::string getTime() {
 	char szOut[255];
 	const std::time_t t = std::time(nullptr);
@@ -43,23 +33,6 @@ static std::string getTime() {
 }
 
 struct ConsoleLogger : LogSink {
-	void log(Level level, const char* msg) override {
-		if ((level != Quiet) && (level <= m_logLevel))
-			send(level, msg);
-	}
-
-	void setLevel(Level level) {
-		m_logLevel = level;
-	}
-
-	void setColor(bool isColored) {
-		m_color = isColored;
-	}
-
-	Level m_logLevel = Warning;
-	bool m_color = true;
-	bool m_syslog = false;
-
 	std::string getColorBegin(Level level) {
 		if (!m_color) return "";
 #ifdef _WIN32
@@ -73,19 +46,19 @@ struct ConsoleLogger : LogSink {
 			}
 		}
 		switch (level) {
-		case Error: SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_INTENSITY); break;
-		case Warning: SetConsoleTextAttribute(console, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN); break;
-		case Info: SetConsoleTextAttribute(console, FOREGROUND_INTENSITY | FOREGROUND_GREEN); break;
-		case Debug: SetConsoleTextAttribute(console, FOREGROUND_GREEN); break;
-		default: break;
+	case Error: SetConsoleTextAttribute(console, FOREGROUND_RED | FOREGROUND_INTENSITY); break;
+	case Warning: SetConsoleTextAttribute(console, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN); break;
+	case Info: SetConsoleTextAttribute(console, FOREGROUND_INTENSITY | FOREGROUND_GREEN); break;
+	case Debug: SetConsoleTextAttribute(console, FOREGROUND_GREEN); break;
+	default: break;
 		}
 #else
 		switch (level) {
-		case Error: fprintf(stderr, RED); break;
-		case Warning: fprintf(stderr, YELLOW); break;
-		case Info: fprintf(stderr, GREEN); break;
-		case Debug: fprintf(stderr, CYAN); break;
-		default: break;
+	case Error: fprintf(stderr, RED); break;
+	case Warning: fprintf(stderr, YELLOW); break;
+	case Info: fprintf(stderr, GREEN); break;
+	case Debug: fprintf(stderr, CYAN); break;
+	default: break;
 		}
 #endif
 		return "";
@@ -101,43 +74,13 @@ struct ConsoleLogger : LogSink {
 		return "";
 	}
 
-	void send(Level level, const char* msg) {
-		get(level) << getColorBegin(level) << getTime() << " " << msg << getColorEnd(level) << std::endl;
+	void send(Level level, const char* msg) override {
+		std::cerr << getColorBegin(level) << getTime() << " " << msg << getColorEnd(level) << std::endl;
 	}
+	bool m_color = true;
 };
 
 static ConsoleLogger consoleLogger;
-
-#ifdef _WIN32
-void setGlobalSyslog(bool enable) {
-	if(enable)
-		throw std::runtime_error("Syslog is not supported on this platform");
-}
-#else
-
-#include <syslog.h>
-struct SyslogLogger : LogSink {
-	SyslogLogger() {
-		openlog(nullptr, 0, LOG_USER);
-	}
-	~SyslogLogger() {
-		closelog();
-	}
-	void log(Level level, const char* msg) override {
-		static const int levelToSysLog[] = { 3, 4, 6, 7 };
-		::syslog(levelToSysLog[level], "%s", msg);
-	}
-};
-
-void setGlobalSyslog(bool enable) {
-	static SyslogLogger syslogLogger;
-	if(enable)
-		g_Log = &syslogLogger;
-	else
-		g_Log = &consoleLogger;
-}
-
-#endif
 
 struct CsvLogger : LogSink {
 	CsvLogger(const char* path) : m_fp(fopen(path, "w")) {
@@ -147,17 +90,27 @@ struct CsvLogger : LogSink {
 	~CsvLogger() {
 		fclose(m_fp);
 	}
-	void log(Level level, const char* msg) override {
+	void send(Level level, const char* msg) override {
 		fprintf(m_fp, "%d, \"%s\", \"%s\"\n", level, getTime().c_str(), msg);
 	}
 	FILE* const m_fp;
 };
 
+void setGlobalLogConsole(bool color_enable)  {
+	consoleLogger.m_color = color_enable;
+	g_Log = &consoleLogger;
+}
+
+void setGlobalLogCSV(const char* path) {
+	static CsvLogger csvLogger(path);
+	g_Log = &csvLogger;
+}
+
 static
 LogSink* getDefaultLogger() {
 	if(auto path = std::getenv("SIGNALS_LOGPATH")) {
-		static CsvLogger csvLogger(path);
-		return &csvLogger;
+		setGlobalLogCSV(path);
+		return g_Log;
 	}
 	return &consoleLogger;
 }
@@ -165,14 +118,27 @@ LogSink* getDefaultLogger() {
 LogSink* g_Log = getDefaultLogger();
 
 Level getGlobalLogLevel() {
-	return consoleLogger.m_logLevel;
+	return g_Log->m_logLevel;
 }
 
 void setGlobalLogLevel(Level level) {
-	consoleLogger.setLevel(level);
+	g_Log->setLevel(level);
 }
 
-void setGlobalLogColor(bool enable) {
-	consoleLogger.setColor(enable);
+void throw_dynamic_cast_error(const char* typeName) {
+	throw std::runtime_error("dynamic cast error: could not convert from Modules::Data to " + std::string(typeName));
 }
 
+Level parseLogLevel(const char* slevel) {
+	auto level = std::string(slevel);
+	if (level == "error") {
+		return Error;
+	} else if (level == "warning") {
+		return Warning;
+	} else if (level == "info") {
+		return Info;
+	} else if (level == "debug") {
+		return Debug;
+	} else
+		throw std::runtime_error("Unknown log level: " + level);
+}

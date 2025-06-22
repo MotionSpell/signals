@@ -1,6 +1,6 @@
 #include "lib_appcommon/options.hpp"
 #include "lib_pipeline/pipeline.hpp"
-#include "plugins/MulticastInput/multicast_input.hpp"
+#include "plugins/SocketInput/socket_input.hpp"
 #include "lib_media/out/file.hpp"
 #include "lib_media/out/null.hpp"
 
@@ -9,18 +9,19 @@ using namespace Modules;
 using namespace Pipelines;
 
 struct Config {
-	MulticastInputConfig mcast;
+	SocketInputConfig mcast;
 	std::string outputPath;
 	bool help = false;
 };
 
 namespace {
 Config parseCommandLine(int argc, char const* argv[]) {
-
 	Config cfg;
+	cfg.mcast.isTcp = false;
+	cfg.mcast.isMulticast = true;
 
 	CmdLineOptions opt;
-	opt.addFlag("h", "help", &cfg.help, "Print usage and exit.");
+	opt.addFlag("h", "help", &cfg.help, "Print usage and exit");
 	opt.add("o", "output", &cfg.outputPath, "Output file path");
 
 	auto files = opt.parse(argc, argv);
@@ -45,7 +46,7 @@ Config parseCommandLine(int argc, char const* argv[]) {
 }
 
 void declarePipeline(Config const& cfg, Pipeline& pipeline) {
-	auto receiver = pipeline.add("MulticastInput", &cfg.mcast);
+	auto receiver = pipeline.add("SocketInput", &cfg.mcast);
 	IFilter* sink;
 	if(cfg.outputPath.empty())
 		sink = pipeline.addModule<Out::Null>();

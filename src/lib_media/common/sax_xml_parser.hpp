@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib_modules/core/buffer.hpp" // span
+#include "span.hpp"
 #include <functional>
 #include <map>
 #include <string>

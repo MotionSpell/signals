@@ -58,7 +58,7 @@ bool checkTimebomb(const double evaluation_period_in_days) {
 	const double diff_time = difftime(current_time, build_time);
 	const double evaluation_period = evaluation_period_in_days * 24.0 * 60.0 * 60.0; // in seconds
 	if (diff_time > evaluation_period) {
-		std::cout << "Evaluation period has expired." << std::endl;
+		std::cerr << "Evaluation period has expired." << std::endl;
 		return false;
 	}
 	return true;

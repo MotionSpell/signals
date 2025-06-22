@@ -1,7 +1,6 @@
 #include "mpeg_dash.hpp"
 #include "lib_media/common/metadata_file.hpp"
 #include "lib_media/common/attributes.hpp"
-#include "lib_modules/utils/helper.hpp"
 #include "lib_modules/utils/helper_dyn.hpp"
 #include "lib_modules/utils/factory.hpp"
 #include "lib_utils/time.hpp"
@@ -95,17 +94,6 @@ struct AdaptiveStreamer : ModuleDynI {
 			}
 
 			while(schedule()) { }
-
-			if (!manifestPublished) {
-				for(auto repIdx : getInputs()) {
-					auto& quality = qualities[repIdx];
-					auto const &meta = quality.getMeta();
-					if (!meta)
-						return;
-				}
-				onNewSegment();
-				manifestPublished = true;
-			}
 		}
 
 		void flush() override {
@@ -128,11 +116,10 @@ struct AdaptiveStreamer : ModuleDynI {
 		OutputDefault* outputSegments;
 		OutputDefault* outputManifest;
 		bool wasInit = false;
-		bool manifestPublished = false;
 
 		void processInitSegment(Quality const& quality, size_t index) {
 			auto const meta = quality.getMeta();
-			auto out = clone(quality.lastData);
+			auto out = quality.lastData->clone();
 			std::string initFn = safe_cast<const MetadataFile>(quality.lastData->getMetadata())->filename;
 
 			if (initFn.empty() || (!(flags & SegmentsNotOwned)))
@@ -149,7 +136,7 @@ struct AdaptiveStreamer : ModuleDynI {
 			metaFn->startsWithRAP = meta->startsWithRAP;
 
 			out->setMetadata(metaFn);
-			out->setMediaTime(totalDurationInMs, 1000);
+			out->set(PresentationTime{timescaleToClock(totalDurationInMs, 1000)});
 			outputSegments->post(out);
 		}
 
@@ -180,7 +167,7 @@ struct AdaptiveStreamer : ModuleDynI {
 
 		std::shared_ptr<DataBase> getPresignalledData(uint64_t size, Data data, bool EOS) {
 			if (!(flags & PresignalNextSegment)) {
-				return clone(data);
+				return data->clone();
 			}
 			if (!safe_cast<const MetadataFile>(data->getMetadata())->filename.empty() && !EOS) {
 				return nullptr;
@@ -193,19 +180,17 @@ struct AdaptiveStreamer : ModuleDynI {
 			};
 			auto constexpr headerSize = sizeof(mp4StaticHeader);
 			if (size == 0 && !EOS) {
-				auto out = outputSegments->allocData<DataRaw>(0);
-				out->buffer->resize(headerSize);
+				auto out = outputSegments->allocData<DataRaw>(headerSize);
 				memcpy(out->buffer->data().ptr, mp4StaticHeader, headerSize);
 				return out;
 			} else if (data->data().len >= headerSize && !memcmp(data->data().ptr, mp4StaticHeader, headerSize)) {
-				auto out = outputSegments->allocData<DataRaw>(0);
 				auto const size = (size_t)(data->data().len - headerSize);
-				out->buffer->resize(size);
+				auto out = outputSegments->allocData<DataRaw>(size);
 				memcpy(out->buffer->data().ptr, data->data().ptr + headerSize, size);
 				return out;
 			} else {
 				assert(data->data().len < 8 || *(uint32_t*)(data->data().ptr + 4) != (uint32_t)0x70797473);
-				return clone(data);
+				return data->clone();
 			}
 		}
 
@@ -231,13 +216,13 @@ struct AdaptiveStreamer : ModuleDynI {
 			return (minIncompletSegDur == std::numeric_limits<uint64_t>::max()) || (qualities[repIdx].curSegDurIn180k > minIncompletSegDur && (qualities[repIdx].getMeta() && qualities[repIdx].getMeta()->EOS));
 		}
 
-		void ensureStartTime(int repIdx=0) {
+		void ensureStartTime() {
 			if (startTimeInMs == -2)
-				startTimeInMs = clockToTimescale(qualities[repIdx].lastData->get<PresentationTime>().time, DASH_TIMESCALE);
+				startTimeInMs = clockToTimescale(qualities[0].lastData->get<PresentationTime>().time, DASH_TIMESCALE);
 		}
 
 		void sendLocalData(Data currData, int repIdx, uint64_t size, bool EOS) {
-			ensureStartTime(repIdx);
+			ensureStartTime();
 			auto out = getPresignalledData(size, currData, EOS);
 			if (out) {
 				auto const &meta = qualities[repIdx].getMeta();
@@ -254,7 +239,7 @@ struct AdaptiveStreamer : ModuleDynI {
 				metaFn->EOS = EOS;
 
 				out->setMetadata(metaFn);
-				out->setMediaTime(totalDurationInMs + timescaleToClock(qualities[repIdx].curSegDurIn180k, 1000));
+				out->set(PresentationTime{totalDurationInMs + timescaleToClock((int64_t)qualities[repIdx].curSegDurIn180k, 1000)});
 				outputSegments->post(out);
 			}
 		}
@@ -330,7 +315,7 @@ struct AdaptiveStreamer : ModuleDynI {
 				ensureStartTime();
 				onNewSegment();
 				totalDurationInMs += segDurationInMs;
-				m_host->log(Debug, format("Processes segment (total processed: %ss)", totalDurationInMs / 1000.0).c_str());
+				m_host->log(Info, format("Processes segment (total processed: %ss)", totalDurationInMs / 1000.0).c_str());
 
 				for (auto& quality : qualities)
 					quality.curSegDurIn180k = 0;
@@ -390,7 +375,7 @@ class Dasher : public AdaptiveStreamer {
 			metadata->durationIn180k = segDurationIn180k;
 			metadata->filesize = contents.size();
 			out->setMetadata(metadata);
-			out->setMediaTime(totalDurationInMs, 1000);
+			out->set(PresentationTime{timescaleToClock(totalDurationInMs, 1000)});
 			memcpy(out->buffer->data().ptr, contents.data(), contents.size());
 			outputManifest->post(out);
 		}
@@ -406,14 +391,14 @@ class Dasher : public AdaptiveStreamer {
 					throw error("Tile info size different from the number of inputs.");
 
 			// create manifest
-			auto xml = createManifest(m_cfg, !manifestPublished);
+			auto xml = createManifest(m_cfg);
 
 			// post manifest
 			if (live)
 				postManifest(xml);
 		}
 
-		std::string createManifest(DasherConfig m_cfg, bool dryRun) {
+		std::string createManifest(DasherConfig m_cfg) {
 			MPD mpd {};
 			if (live)
 				mpd.minimum_update_period = 1000;
@@ -544,19 +529,16 @@ class Dasher : public AdaptiveStreamer {
 							nextSegFilename = getPrefixedSegmentName(quality, repIdx, n + 1);
 					}
 
-					as.representations.push_back(rep);
-
-					if (dryRun)
-						continue;
-
 					postSegment(quality, segFilename, nextSegFilename);
 
 					if (m_cfg.timeShiftBufferDepthInMs)
 						deleteOldSegments(quality);
+
+					as.representations.push_back(rep);
 				}
 
 				for(auto &as : adaptationSets)
-					period.adaptationSets.push_back(as);
+					period.adaptationSets.push_back(as.value);
 
 				mpd.periods.push_back(period);
 				periodIdx++;
@@ -609,7 +591,7 @@ class Dasher : public AdaptiveStreamer {
 				if (!out)
 					throw error("Unexpected null pointer detected while getting data.");
 				out->setMetadata(metaFn);
-				out->setMediaTime(totalDurationInMs, 1000);
+				out->set(PresentationTime { timescaleToClock(totalDurationInMs, 1000) });
 				outputSegments->post(out);
 
 				if (!nextSegFilename.empty()) {
@@ -619,7 +601,7 @@ class Dasher : public AdaptiveStreamer {
 						meta->filename = nextSegFilename;
 						meta->EOS = false;
 						out->setMetadata(meta);
-						out->setMediaTime(totalDurationInMs, 1000);
+						out->set(PresentationTime { timescaleToClock(totalDurationInMs, 1000) });
 						outputSegments->post(out);
 					}
 				}
@@ -641,7 +623,7 @@ class Dasher : public AdaptiveStreamer {
 				cfg.live = false;
 				cfg.minUpdatePeriodInMs = 0;
 				totalDurationInMs -= segDurationInMs;
-				auto xml = createManifest(cfg, false);
+				auto xml = createManifest(cfg);
 				postManifest(xml);
 			}
 		}

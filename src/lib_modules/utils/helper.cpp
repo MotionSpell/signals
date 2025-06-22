@@ -1,10 +1,8 @@
-#include "helper.hpp"
 #include "helper_dyn.hpp"
 #include "helper_input.hpp"
-#include "log.hpp"
-#include "format.hpp"
-#include "tools.hpp" // safe_cast
-#include <iostream>
+#include "lib_utils/log.hpp"
+#include "lib_utils/format.hpp"
+#include "lib_utils/tools.hpp" // safe_cast
 
 namespace Modules {
 
@@ -27,7 +25,8 @@ void MetadataCap::setMetadata(Metadata metadata) {
 	}
 
 	if (metadata->type != m_metadata->type)
-		throw std::runtime_error(format("Metadata update: incompatible types %s for data and %s for attached", metadata->type, m_metadata->type));
+		throw std::runtime_error(format("Metadata update: incompatible types %s for data and %s for attached",
+		    (int)metadata->type, (int)m_metadata->type));
 
 	if (*m_metadata == *metadata) {
 		g_Log->log(Debug, "Output: metadata not equal but comparable by value. Updating.");
@@ -89,30 +88,8 @@ void Output::connectFunction(std::function<void(Data)> f) {
 
 // used by unit tests
 void ConnectOutput(IOutput* o, std::function<void(Data)> f) {
-	if (!o) {
-		throw std::runtime_error("ConnectOutput: null input");
-	}
-
-	try {
-		// Try OutputDefault first
-		if (auto defaultOutput = dynamic_cast<OutputDefault*>(o)) {
-			defaultOutput->connectFunction(f);
-			return;
-		}
-
-		// Then try Output
-		if (auto baseOutput = dynamic_cast<Output*>(o)) {
-			baseOutput->connectFunction(f);
-			return;
-		}
-
-		throw std::runtime_error("Could not cast to any known output type");
-
-	} catch (const std::exception& e) {
-		std::cerr << "ConnectOutput failed: " << e.what() << std::endl;
-		std::cerr << "From type: " << typeid(*o).name() << std::endl;
-		throw;
-	}
+	auto output = safe_cast<Output>(o);
+	output->connectFunction(f);
 }
 
 }

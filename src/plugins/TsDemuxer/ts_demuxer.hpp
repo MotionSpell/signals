@@ -1,8 +1,10 @@
 #pragma once
 
+#include <vector>
+
 struct TsDemuxerConfig {
 	enum { ANY = 0 };
-	enum { NONE = -1, VIDEO = 1, AUDIO = 2 };
+	enum { NONE = -1, VIDEO = 1, AUDIO = 2, TELETEXT = 3 };
 
 	struct Pid {
 		int pid = ANY;
@@ -16,6 +18,8 @@ struct TsDemuxerConfig {
 		return { ANY, AUDIO };
 	};
 
-	Pid pids[8] = { ANY_VIDEO(), ANY_AUDIO() };
+	std::vector<Pid> pids = { ANY_VIDEO(), ANY_AUDIO() };
+
+	bool timestampStartsAtZero = true;
 };
 

@@ -10,6 +10,8 @@
 
 #define MOVE_FILE_NUM_RETRY 3
 
+using namespace std::chrono;
+
 namespace Modules {
 namespace Stream {
 
@@ -51,7 +53,7 @@ bool AdaptiveStreamingCommon::moveFile(const std::string &src, const std::string
 		} catch(...) {
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(10ms);
 	}
 	if (!retry) {
 		return false;
@@ -63,7 +65,7 @@ void AdaptiveStreamingCommon::processInitSegment(Quality const * const quality, 
 	auto const &meta = quality->getMeta();
 	switch (meta->type) {
 	case AUDIO_PKT: case VIDEO_PKT: case SUBTITLE_PKT: {
-		auto out = clone(quality->lastData);
+		auto out = quality->lastData->clone();
 		std::string initFn = safe_cast<const MetadataFile>(quality->lastData->getMetadata())->filename;
 		if (initFn.empty()) {
 			initFn = format("%s%s", manifestDir, getInitName(quality, index));
@@ -84,7 +86,7 @@ void AdaptiveStreamingCommon::processInitSegment(Quality const * const quality, 
 		metaFn->startsWithRAP = meta->startsWithRAP;
 
 		out->setMetadata(metaFn);
-		out->setMediaTime(totalDurationInMs, 1000);
+		out->set(PresentationTime { timescaleToClock((int64_t)totalDurationInMs, 1000) });
 		outputSegments->post(out);
 		break;
 	}
@@ -146,7 +148,7 @@ void AdaptiveStreamingCommon::endOfStream() {
 
 std::shared_ptr<DataBase> AdaptiveStreamingCommon::getPresignalledData(uint64_t size, Data &data, bool EOS) {
 	if (!(flags & PresignalNextSegment)) {
-		return clone(data);
+		return data->clone();
 	}
 	if (!safe_cast<const MetadataFile>(data->getMetadata())->filename.empty() && !EOS) {
 		return nullptr;
@@ -159,19 +161,17 @@ std::shared_ptr<DataBase> AdaptiveStreamingCommon::getPresignalledData(uint64_t 
 	};
 	auto constexpr headerSize = sizeof(mp4StaticHeader);
 	if (size == 0 && !EOS) {
-		auto out = outputSegments->allocData<DataRaw>(0);
-		out->buffer->resize(headerSize);
+		auto out = outputSegments->allocData<DataRaw>(headerSize);
 		memcpy(out->buffer->data().ptr, mp4StaticHeader, headerSize);
 		return out;
 	} else if (data->data().len >= headerSize && !memcmp(data->data().ptr, mp4StaticHeader, headerSize)) {
-		auto out = outputSegments->allocData<DataRaw>(0);
 		auto const size = (size_t)(data->data().len - headerSize);
-		out->buffer->resize(size);
+		auto out = outputSegments->allocData<DataRaw>(size);
 		memcpy(out->buffer->data().ptr, data->data().ptr + headerSize, size);
 		return out;
 	} else {
 		assert(data->data().len < 8 || *(uint32_t*)(data->data().ptr + 4) != (uint32_t)0x70797473);
-		return clone(data);
+		return data->clone();
 	}
 }
 
@@ -224,7 +224,7 @@ void AdaptiveStreamingCommon::threadProc() {
 			metaFn->EOS = EOS;
 
 			out->setMetadata(metaFn);
-			out->setMediaTime(totalDurationInMs + timescaleToClock(curSegDurIn180k[i], 1000));
+			out->set(PresentationTime{ (int64_t)(totalDurationInMs + timescaleToClock(curSegDurIn180k[i], 1000)) });
 			outputSegments->post(out);
 		}
 	};
@@ -295,7 +295,7 @@ void AdaptiveStreamingCommon::threadProc() {
 				break;
 			} else {
 				assert((type == LiveNonBlocking) && ((int)qualities.size() < numInputs));
-				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+				std::this_thread::sleep_for(1000ms);
 				continue;
 			}
 		}
@@ -308,13 +308,13 @@ void AdaptiveStreamingCommon::threadProc() {
 			totalDurationInMs += segDurationInMs;
 			auto utcInMs = int64_t(getUTC() * 1000);
 			m_host->log(Info, format("Processes segment (total processed: %ss, UTC: %sms (deltaAST=%s, deltaInput=%s).",
-			        (double)totalDurationInMs / 1000, utcInMs, utcInMs - startTimeInMs, (int64_t)(utcInMs - curMediaTimeInMs)).c_str());
+			    (double)totalDurationInMs / 1000, utcInMs, utcInMs - startTimeInMs, (int64_t)(utcInMs - curMediaTimeInMs)).c_str());
 
 			if (type != Static) {
 				const int64_t durInMs = startTimeInMs + totalDurationInMs - utcInMs;
 				if (durInMs > 0) {
 					m_host->log(Debug, format("Going to sleep for %s ms.", durInMs).c_str());
-					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+					std::this_thread::sleep_for(1000ms);
 				} else {
 					m_host->log(Warning, format("Late from %s ms.", -durInMs).c_str());
 				}

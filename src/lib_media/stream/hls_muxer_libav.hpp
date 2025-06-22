@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdint.h>
 #include <string>
 #include "../common/utc_start_time.hpp"
 

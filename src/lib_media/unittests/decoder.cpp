@@ -5,9 +5,9 @@
 #include "lib_media/common/picture.hpp" // DataPicture
 #include "lib_media/common/pcm.hpp"
 #include "lib_media/common/metadata.hpp" // MetadataPkt
+#include "lib_media/decode/decoder.hpp"
 #include "lib_media/transform/audio_convert.hpp"
 #include "lib_media/encode/libav_encode.hpp"
-#include "lib_media/in/file.hpp"
 #include "lib_media/out/null.hpp"
 #include "lib_utils/tools.hpp"
 
@@ -48,15 +48,11 @@ std::shared_ptr<DataBase> getTestMp3Frame() {
 	};
 
 	auto r = createPacket(mp3_sine_frame);
-
-	{
-		auto meta = make_shared<MetadataPkt>(AUDIO_PKT);
-		meta->codec = "mp3";
-		r->setMetadata(meta);
-	}
-
+	auto meta = make_shared<MetadataPkt>(AUDIO_PKT);
+	meta->codec = "mp3";
+	r->setMetadata(meta);
+	r->set(PresentationTime{0});
 	r->set(CueFlags {});
-
 	return r;
 }
 }
@@ -69,7 +65,9 @@ unittest("decoder: audio simple") {
 		int frameCount = 0;
 	};
 
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)AUDIO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = AUDIO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 	auto rec = createModule<FrameCounter>();
 	ConnectOutputToInput(decode->getOutput(0), rec->getInput(0));
 
@@ -90,7 +88,9 @@ unittest("decoder: timestamp propagation") {
 		std::vector<int64_t> mediaTimes;
 	};
 
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)AUDIO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = AUDIO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 	auto rec = createModule<FrameCounter>();
 	ConnectOutputToInput(decode->getOutput(0), rec->getInput(0));
 
@@ -119,21 +119,19 @@ std::shared_ptr<DataBase> getTestH264Frame() {
 	};
 
 	auto r = createPacket(h264_gray_frame);
-
-	{
-		auto meta = make_shared<MetadataPkt>(VIDEO_PKT);
-		meta->codec = "h264_annexb";
-		r->setMetadata(meta);
-	}
-
+	auto meta = make_shared<MetadataPkt>(VIDEO_PKT);
+	meta->codec = "h264_annexb";
+	r->setMetadata(meta);
+	r->set(PresentationTime{0});
 	r->set(CueFlags {});
-
 	return r;
 }
 }
 
 unittest("decoder: video simple") {
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)VIDEO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = VIDEO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 	auto data = getTestH264Frame();
 
 	std::vector<std::string> actualFrames;
@@ -162,7 +160,9 @@ unittest("decoder: video simple") {
 }
 
 unittest("decoder: destroy without flushing") {
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)VIDEO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = VIDEO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 
 	int picCount = 0;
 	auto onPic = [&](Data) {
@@ -175,7 +175,9 @@ unittest("decoder: destroy without flushing") {
 }
 
 unittest("decoder: flush without feeding") {
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)VIDEO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = VIDEO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 
 	int picCount = 0;
 	auto onPic = [&](Data) {
@@ -190,20 +192,24 @@ unittest("decoder: flush without feeding") {
 unittest("decoder: audio mp3 manual frame to AAC") {
 	EncoderConfig cfg { EncoderConfig::Audio };
 
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)AUDIO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = AUDIO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 	auto encoder = loadModule("Encoder", &NullHost, &cfg);
 
 	ConnectOutputToInput(decode->getOutput(0), encoder->getInput(0));
 
 	auto frame = getTestMp3Frame();
 
-	decode->getInput(0)->push(frame);
+	ASSERT_THROWN(decode->getInput(0)->push(frame));
 }
 
 unittest("decoder: audio mp3 to converter to AAC") {
 	EncoderConfig cfg { EncoderConfig::Audio };
 
-	auto decoder = loadModule("Decoder", &NullHost, (void*)(uintptr_t)AUDIO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = AUDIO_PKT;
+	auto decoder = loadModule("Decoder", &NullHost, &decCfg);
 	auto encoder = loadModule("Encoder", &NullHost, &cfg);
 
 	auto const dstFormat = PcmFormat(44100, 2, AudioLayout::Stereo, AudioSampleFormat::F32, AudioStruct::Planar);

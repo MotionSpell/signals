@@ -1,7 +1,7 @@
 #include "filter.hpp"
-#include "log_sink.hpp"
-#include "format.hpp"
-#include "tools.hpp" // enforce
+#include "lib_utils/log_sink.hpp"
+#include "lib_utils/format.hpp"
+#include "lib_utils/tools.hpp" // enforce
 #include "lib_signals/executor_threadpool.hpp"
 #include "stats.hpp"
 #include "filter_input.hpp"
@@ -33,6 +33,7 @@ Filter::Filter(const char* name,
 }
 
 Filter::~Filter() {
+	log(Info, "Pipeline: destroy");
 }
 
 // KHost implementation
@@ -77,11 +78,8 @@ void Filter::connect(IOutput *output, int inputIdx, bool inputAcceptMultipleConn
 		throw std::runtime_error(format("Filter %s: input %s is already connected.", m_name, inputIdx));
 
 	input->connect();
-
 	CheckMetadataCompatibility(output, input);
-
 	output->connect(input);
-
 	connections++;
 }
 
@@ -118,8 +116,8 @@ void Filter::processSource() {
 		delegate->process();
 	} catch(std::exception const& e) {
 		log(Error, (std::string("Source error: ") + e.what()).c_str());
-		exception(std::current_exception());
-		if (active)
+		auto handled = exception(std::current_exception());
+		if (!handled && active)
 			stopSource();
 	}
 
@@ -130,14 +128,12 @@ void Filter::startSource() {
 	assert(isSource());
 
 	if (started) {
-		log(Info, "Pipeline: source already started . Doing nothing.");
+		log(Info, "Pipeline: source already started. Doing nothing.");
 		return;
 	}
 
 	connections = 1;
-
 	reschedule();
-
 	started = true;
 }
 
@@ -178,7 +174,12 @@ void Filter::endOfStream() {
 	}
 
 	if (eosCount == connections) {
-		delegate->flush();
+		log(Info, "Pipeline: flushing...");
+		try {
+			delegate->flush();
+		} catch(std::exception const& e) {
+			log(Error, (std::string("Flush error: ") + e.what()).c_str());
+		}
 
 		for (int i = 0; i < delegate->getNumOutputs(); ++i) {
 			delegate->getOutput(i)->post(nullptr);
@@ -187,11 +188,13 @@ void Filter::endOfStream() {
 		if (connections) {
 			m_eventSink->endOfStream();
 		}
+
+		log(Info, "Pipeline: flushed");
 	}
 }
 
-void Filter::exception(std::exception_ptr eptr) {
-	m_eventSink->exception(eptr);
+bool Filter::exception(std::exception_ptr eptr) {
+	return m_eventSink->exception(eptr);
 }
 
 }
