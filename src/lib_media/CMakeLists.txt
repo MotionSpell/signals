@@ -21,9 +21,7 @@ set(LIB_MEDIA_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/stream/apple_hls.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stream/ms_hss.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stream/adaptive_streaming_common.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/transform/audio_gap_filler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/transform/restamp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/transform/rectifier.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/transform/restamp.cpp # needed by unittests/timings.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/recorder.cpp
 )
 
@@ -512,3 +510,23 @@ target_link_libraries(Rectifier
 )
 
 signals_install_plugin(Rectifier ".smd")
+
+# AudioGapFiller target
+set(EXE_AUDIO_GAP_FILLER_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/transform/audio_gap_filler.cpp
+)
+list(APPEND EXE_AUDIO_GAP_FILLER_SRCS ${LIB_MODULES_SRCS})
+add_library(AudioGapFiller SHARED ${EXE_AUDIO_GAP_FILLER_SRCS})
+target_include_directories(AudioGapFiller 
+    PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR} 
+    ${CMAKE_SOURCE_DIR}/src/
+)
+target_link_libraries(AudioGapFiller 
+    PRIVATE 
+    media 
+    pipeline 
+    appcommon 
+    utils
+)
+signals_install_plugin(AudioGapFiller ".smd")
