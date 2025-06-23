@@ -14,9 +14,7 @@ struct Entry {
 static Entry registry[1024];
 
 Entry* findEntry(string name) {
-	printf("BEGIN %s ==================\n", name.c_str());
 	for(auto& entry : registry) {
-		if (entry.name) printf("  %s == %s\n", entry.name, name.c_str());
 		if(entry.name && entry.name == name)
 			return &entry;
 	}
@@ -32,7 +30,6 @@ Entry* findFreeEntry() {
 
 namespace Factory {
 int registerModule(const char* name, CreationFunc* func) {
-	printf("REG %s ==================\n", name);
 	if(findEntry(name))
 		throw runtime_error("Module '" + string(name) + "' is already registered");
 

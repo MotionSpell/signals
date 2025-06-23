@@ -851,8 +851,9 @@ void GPACMuxMP4::sendSegmentToOutput(bool EOS) {
 		SAFE(gf_isom_write(isoCur));
 	}
 
-	auto out = output->allocData<DataRaw>(0);
+	std::shared_ptr<DataRaw> out;
 	if (gf_isom_get_filename(isoCur)) {
+		out = output->allocData<DataRaw>(0); // data conveyed in file
 		lastSegmentSize = fileSize(segmentName);
 	} else {
 		auto const newBsNeeded = EOS || ( (compatFlags & FlushFragMemory) && curFragmentDurInTs );
@@ -862,8 +863,7 @@ void GPACMuxMP4::sendSegmentToOutput(bool EOS) {
 			m_host->log(Debug, "Empty segment. Ignore.");
 			return;
 		}
-		//out->buffer->resize(contents.len);
-		safe_cast<DataRawResizable>(out)->resize(contents.len);
+		out = output->allocData<DataRaw>(contents.len);
 		if(contents.len)
 			memcpy(out->buffer->data().ptr, contents.ptr, contents.len);
 		gf_free(contents.ptr);
