@@ -10,7 +10,7 @@ using namespace Modules;
 // allows ASSERT_EQUALS on Page
 static std::ostream& operator<<(std::ostream& o, const Page& p) {
 	o << p.toString();
-	return o; x
+	return o;
 }
 
 static bool operator!=(const Page::Region& lhs, const Page::Region& rhs) {

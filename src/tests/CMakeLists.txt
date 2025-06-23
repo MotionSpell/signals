@@ -24,7 +24,7 @@ set(EXE_TESTS_SRCS
 )
 
 # Add any additional source files from the 'unittests' directories
-file(GLOB_RECURSE UNITTEST_SOURCES "${SIGNALS_TOP_SOURCE_DIR}/src/*/unittests/*.cpp")
+file(GLOB_RECURSE UNITTEST_SOURCES "${SIGNALS_TOP_SOURCE_DIR}/src/*/unittests/*.cpp" "${SIGNALS_TOP_SOURCE_DIR}/src/plugins/*/unittests/*.cpp")
 list(APPEND EXE_TESTS_SRCS ${UNITTEST_SOURCES})
 
 # Define the unit tests executable target

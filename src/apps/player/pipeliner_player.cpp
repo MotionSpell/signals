@@ -17,7 +17,7 @@
 #include "lib_media/in/file.hpp"
 #include "lib_media/out/null.hpp"
 #include "lib_media/transform/rectifier.hpp"
-#include "plugins/GpacFilters/gpac_filters.hpp"
+//FIXME: #include "plugins/GpacFilters/gpac_filters.hpp"
 #include "plugins/HlsDemuxer/hls_demux.hpp"
 #include "plugins/HttpInput/http_input.hpp"
 #include "plugins/SocketInput/socket_input.hpp"

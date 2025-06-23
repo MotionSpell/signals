@@ -17,7 +17,7 @@ using namespace Modules;
 
 namespace {
 
-auto const DEBUG_DISPLAY_TIMESTAMPS = true;
+auto const DEBUG_DISPLAY_TIMESTAMPS = false;
 
 std::string timecodeToString(int64_t timeInMs) {
 	const size_t timecodeSize = 24;
