@@ -154,7 +154,8 @@ unittest("GPACDemuxMP4Full: demux fragments") {
 	ASSERT_EQUALS(820, sampleCount);
 }
 
-unittest("GPACDemuxMP4Full: fmp4 simple: one frame per fragment") {
+//FIXME: mp4 data is incorrect
+unittest("[DISABLED] GPACDemuxMP4Full: fmp4 simple: one frame per fragment") {
 	struct FrameCounter : ModuleS {
 		void processOne(Data) override {
 			++frameCount;
