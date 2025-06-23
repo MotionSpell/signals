@@ -51,6 +51,7 @@
         "unordered_map": "cpp",
         "variant": "cpp",
         "vector": "cpp",
-        "memory": "cpp"
+        "memory": "cpp",
+        "cstddef": "cpp"
     }
 }

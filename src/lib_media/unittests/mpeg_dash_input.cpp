@@ -185,32 +185,32 @@ unittest("[DISABLED] mpeg_dash_input: only get available segments") {
     </AdaptationSet>
   </Period>
 </MPD>)|";
-    LocalFilesystem source;
-    source.resources["main/manifest.mpd"] = MPD;
-    source.resources["main/high/init.mp4"] = "a";
-    source.resources["main/high/5.m4s"] = "a";
-    source.resources["main/high/6.m4s"] = "a";
-    source.resources["main/high/7.m4s"] = "a";
-    
-    auto dash = createModule<MPEG_DASH_Input>(&NullHost, &source, "main/manifest.mpd");
-    dash->enableStream(0, 1); // high
+	LocalFilesystem source;
+	source.resources["main/manifest.mpd"] = MPD;
+	source.resources["main/high/init.mp4"] = "a";
+	source.resources["main/high/5.m4s"] = "a";
+	source.resources["main/high/6.m4s"] = "a";
+	source.resources["main/high/7.m4s"] = "a";
 
-    // Process only enough times to get available segments
-    for(int i = 0; i < 4; ++i) { // One for init, three for segments
-        dash->process();
-    }
+	auto dash = createModule<MPEG_DASH_Input>(&NullHost, &source, "main/manifest.mpd");
+	dash->enableStream(0, 1); // high
 
-    dash = nullptr;
+	// Process only enough times to get available segments
+	for(int i = 0; i < 4; ++i) { // One for init, three for segments
+		dash->process();
+	}
 
-    ASSERT_EQUALS(
-    std::vector<std::string>({
-        "main/manifest.mpd",
-        "main/high/init.mp4",
-        "main/high/5.m4s",
-        "main/high/6.m4s",
-        "main/high/7.m4s"
-    }),
-    source.requests);
+	dash = nullptr;
+
+	ASSERT_EQUALS(
+	std::vector<std::string>({
+		"main/manifest.mpd",
+		"main/high/init.mp4",
+		"main/high/5.m4s",
+		"main/high/6.m4s",
+		"main/high/7.m4s"
+	}),
+	source.requests);
 }
 
 unittest("[DISABLED] mpeg_dash_input: get concurrent chunks") {

@@ -7,8 +7,7 @@ file(GLOB LIB_MODULES_SRCS
     ${SIGNALS_TOP_SOURCE_DIR}/src/lib_modules/core/*.cpp
 )
 
-
-file(GLOB LIB_MEDIA_SRCS 
+file(GLOB_RECURSE LIB_MEDIA_SRCS 
     ${SIGNALS_TOP_SOURCE_DIR}/src/lib_media/*.cpp
 )
 
@@ -38,6 +37,7 @@ target_link_libraries(unittests
     utils
     CURL::libcurl
     ${FFMPEG_LIBRARIES}
+    libjpeg-turbo::turbojpeg
 )
 
 # Include directories for unit tests 

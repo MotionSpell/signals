@@ -55,7 +55,7 @@ unittest("remux test: libav mp4 mux") {
 
 	ASSERT(demux->getNumOutputs() > 1);
 	for (int i = 0; i < demux->getNumOutputs(); ++i) {
-		auto data = make_shared<DataBase>();
+		auto data = make_shared<DataRaw>(0);
 		data->setMetadata(demux->getOutput(i)->getMetadata());
 		mux->getInput(i)->push(data);
 
