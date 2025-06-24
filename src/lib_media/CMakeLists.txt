@@ -15,7 +15,6 @@ set(LIB_MEDIA_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/in/video_generator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/out/file.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/out/http.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/out/http_sink.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/out/null.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/out/print.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stream/apple_hls.cpp
@@ -52,7 +51,7 @@ target_link_libraries(media
     utils
     $<BUILD_INTERFACE:gpac::gpac>
     $<BUILD_INTERFACE:CURL::libcurl>
-    )
+)
 
 # Define source files for the AVCC2AnnexBConverter
 set(EXE_AVCC2ANNEXBCONVERTER_SRCS
@@ -79,7 +78,7 @@ target_link_libraries(AVCC2AnnexBConverter
     pipeline 
     appcommon 
     utils
-    )
+)
 
 signals_install_plugin(AVCC2AnnexBConverter ".smd")
 
@@ -111,8 +110,7 @@ target_link_libraries(LibavMuxHLSTS
     pipeline 
     appcommon 
     ${FFMPEG_LIBRARIES}
-    )
-
+)
 signals_install_plugin(LibavMuxHLSTS ".smd")
 
 # Define source files for the VideoConvert target
@@ -138,7 +136,6 @@ target_link_libraries(VideoConvert PRIVATE
     media  pipeline appcommon utils
     ${FFMPEG_LIBRARIES}
 )
-
 signals_install_plugin(VideoConvert ".smd")
 
 # AudioConvert target
@@ -161,8 +158,7 @@ target_link_libraries(AudioConvert
     appcommon 
     utils 
     ${FFMPEG_LIBRARIES}
-    )
-
+)
 signals_install_plugin(AudioConvert ".smd")
 
 # JPEGTurboDecode target
@@ -183,8 +179,7 @@ target_link_libraries(JPEGTurboDecode
     appcommon 
     utils 
     libjpeg-turbo::turbojpeg
-    )
-    
+)
 signals_install_plugin(JPEGTurboDecode ".smd")
 
 # JPEGTurboEncode target
@@ -202,8 +197,7 @@ target_link_libraries(JPEGTurboEncode
     appcommon 
     utils 
     libjpeg-turbo::turbojpeg
-    )
-
+)
 signals_install_plugin(JPEGTurboEncode ".smd")
 
 # Encoder target
@@ -221,7 +215,6 @@ target_include_directories(Encoder
     ${CMAKE_SOURCE_DIR}/src/
     ${FFMPEG_INCLUDE_DIRS}
 )
-
 target_link_libraries(Encoder 
     PRIVATE 
     media 
@@ -229,8 +222,7 @@ target_link_libraries(Encoder
     appcommon 
     utils 
     ${FFMPEG_LIBRARIES}
-    )
-
+)
 signals_install_plugin(Encoder ".smd")
 
 # Decoder target
@@ -254,8 +246,7 @@ target_link_libraries(Decoder
     appcommon 
     utils 
     ${FFMPEG_LIBRARIES}
-    )
-
+)
 signals_install_plugin(Decoder ".smd")
 
 # LibavDemux target
@@ -280,8 +271,7 @@ target_link_libraries(LibavDemux
     appcommon 
     utils 
     ${FFMPEG_LIBRARIES}
-    )
-
+)
 signals_install_plugin(LibavDemux ".smd")
 
 # LibavMux target
@@ -305,8 +295,7 @@ target_link_libraries(LibavMux
     appcommon 
     utils 
     ${FFMPEG_LIBRARIES}
-    )
-
+)
 signals_install_plugin(LibavMux ".smd")
 
 # LibavFilter target
@@ -331,7 +320,6 @@ target_link_libraries(LibavFilter
     utils 
     ${FFMPEG_LIBRARIES}
 )
-
 signals_install_plugin(LibavFilter ".smd")
 
 # GPACMuxMP4 target
@@ -354,8 +342,7 @@ target_link_libraries(GPACMuxMP4
     utils 
     gpac::gpac
     ${FFMPEG_LIBRARIES}
-    )
-
+)
 signals_install_plugin(GPACMuxMP4 ".smd")
 
 # GPACMuxMP4MSS target
@@ -377,8 +364,7 @@ target_link_libraries(GPACMuxMP4MSS
     appcommon 
     utils 
     gpac::gpac
-    )
-
+)
 signals_install_plugin(GPACMuxMP4MSS ".smd")
 
 # GPACDemuxMP4Simple target
@@ -399,8 +385,7 @@ target_link_libraries(GPACDemuxMP4Simple
     appcommon 
     utils 
     gpac::gpac
-    )
-
+)
 signals_install_plugin(GPACDemuxMP4Simple ".smd")
 
 # GPACDemuxMP4Full target
@@ -422,8 +407,7 @@ target_link_libraries(GPACDemuxMP4Full
     utils 
     gpac::gpac
     ${FFMPEG_LIBRARIES}
-    )
-
+)
 signals_install_plugin(GPACDemuxMP4Full ".smd")
 
 # FileSystemSink target
@@ -443,8 +427,7 @@ target_link_libraries(FileSystemSink
     pipeline 
     appcommon 
     utils
-    )
-
+)
 signals_install_plugin(FileSystemSink ".smd")
 
 # LogoOverlay target
@@ -466,7 +449,6 @@ target_link_libraries(LogoOverlay
     appcommon 
     utils
     )
-    
 signals_install_plugin(LogoOverlay ".smd")
 
 # HTTPSink target
@@ -486,9 +468,29 @@ target_link_libraries(HttpSink
     pipeline 
     appcommon 
     utils
-    )
-
+)
 signals_install_plugin(HttpSink ".smd")
+
+
+# HTTP target
+set(EXE_HTTP_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/out/http.cpp
+)
+list(APPEND EXE_FILESYSTEMSINK_SRCS ${LIB_MODULES_SRCS})
+add_library(Http SHARED ${EXE_HTTP_SRCS})
+target_include_directories(Http 
+    PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR} 
+    ${CMAKE_SOURCE_DIR}/src/
+)
+target_link_libraries(Http 
+    PRIVATE 
+    media 
+    pipeline 
+    appcommon 
+    utils
+)
+signals_install_plugin(Http ".smd")
 
 # Rectifier target
 set(EXE_RECTIFIER_SRCS
@@ -508,7 +510,6 @@ target_link_libraries(Rectifier
     appcommon 
     utils
 )
-
 signals_install_plugin(Rectifier ".smd")
 
 # AudioGapFiller target
