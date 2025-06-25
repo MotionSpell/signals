@@ -217,17 +217,15 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		memcpy(data->buffer->data().ptr, chunk.ptr, chunk.len);
 		stream->out->post(data);
 	};
-	int retryCount = 20;
-	while(retryCount > 0) {
+	const int retrySeconds = 2;
+	std::chrono::time_point<std::chrono::system_clock> retryUntil = std::chrono::system_clock::now() + std::chrono::seconds(retrySeconds);
+	while(std::chrono::system_clock::now() < retryUntil) {
 		m_host->log(Debug, format("wget: '%s'", url).c_str());
 		stream->source->wget(url.c_str(), onBuffer);
 		m_host->log(Debug, format("wget done, empty=%s: '%s'", (int)empty, url).c_str());
-		retryCount--;
-		if (!empty) retryCount = 0;
-		if (!stream->anySegmentDataReceived) retryCount = 0;
-		if (retryCount > 0) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		}
+		if (!empty) break;
+		if (!stream->anySegmentDataReceived) break;
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	if (empty) {
 		if (mpd->dynamic && !stream->anySegmentDataReceived) {
