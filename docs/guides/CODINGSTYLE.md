@@ -1,9 +1,8 @@
-# AStyle {#codingstyle}
+# clang-format {#codingstyle}
 \page codingstyle Coding Style
 \ingroup guides
 
-AStyle is a code beautifier tool. Code should be compliant with the following pattern provided by AStyle :
-AStyle -r --indent=tab --indent-classes --indent-col1-comments --style=attach --keep-one-line-statements '*.hpp' '*.cpp'
+Clang-Format is a code beautifier tool. Code should be compliant with the .clang-format file present at the root folder of this repository.
 
 
 # Example

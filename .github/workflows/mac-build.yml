@@ -36,7 +36,7 @@ jobs:
           automake \
           libtool \
           python3 \
-          astyle   
+          clang-format
 
     - name: Initialize vcpkg submodule
       run: |
