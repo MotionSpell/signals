@@ -12,7 +12,7 @@ sudo apt-get update && sudo apt-get install -y \
     linux-libc-dev build-essential pkg-config \
     yasm nasm autoconf automake autoconf-archive \
     autotools-dev python3 python3-jinja2 gcc g++ \
-    make libtool libtool-bin astyle
+    make libtool libtool-bin clang-format
 ```
 
 ### macOS
@@ -20,7 +20,7 @@ sudo apt-get update && sudo apt-get install -y \
 # Install build dependencies via Homebrew
 brew update && brew install \
     cmake ninja pkg-config yasm nasm \
-    autoconf automake libtool python3 astyle
+    autoconf automake libtool python3 clang-format
 ```
 
 ### Windows (MSYS2)
@@ -38,7 +38,7 @@ pacman -S --noconfirm \
     mingw-w64-x86_64-gcc \
     mingw-w64-x86_64-libtool \
     mingw-w64-x86_64-python3 \
-    mingw-w64-x86_64-astyle
+    mingw-w64-x86_64-clang-format
 ```
 
 ## Building

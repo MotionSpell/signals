@@ -48,7 +48,7 @@ jobs:
         make \
         libtool \
         libtool-bin \
-        astyle
+        clang-format
 
     - name: Install CMake and Ninja
       run: |

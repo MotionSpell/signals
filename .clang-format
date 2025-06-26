@@ -1,0 +1,36 @@
+BasedOnStyle: WebKit
+UseTab: Never
+Language: Cpp
+DisableFormat: false
+IndentWidth: 2
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: All
+AlwaysBreakTemplateDeclarations: Yes
+BinPackParameters: false
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Attach
+ColumnLimit: 120
+CompactNamespaces: true
+ContinuationIndentWidth: 6
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+FixNamespaceComments: false
+IncludeBlocks: Regroup
+IncludeIsMainRegex: '$'
+IndentCaseLabels: false
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+PointerAlignment: Right
+SortIncludes: true
+SpaceAfterTemplateKeyword: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeParens: false
+SpaceInEmptyBlock: false
+IncludeCategories:
+  - Regex: '^.*\/.*$'
+    Priority: 1000
+  - Regex: '^\<.*\>$'
+    Priority: 1001
+  - Regex: '.*'
+    Priority: 2000
