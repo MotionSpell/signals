@@ -27,6 +27,14 @@ struct HttpSink : ModuleS {
 		HttpSink(KHost* host, string baseURL, string userAgent, const vector<string> &headers)
 			: m_host(host), baseURL(baseURL), userAgent(userAgent), headers(headers) {
 			done = false;
+
+			HttpOutputConfig httpConfig {};
+			httpConfig.flags.InitialEmptyPost = true; // we want immediate failure if the URL is not reachable
+			httpConfig.flags.request = POST;
+			httpConfig.url = baseURL;
+			httpConfig.userAgent = userAgent;
+			httpConfig.headers = headers;
+			auto http = loadModule("HTTP", m_host, &httpConfig);
 		}
 		~HttpSink() {
 			done = true;

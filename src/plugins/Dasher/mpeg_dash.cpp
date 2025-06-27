@@ -228,13 +228,13 @@ struct AdaptiveStreamer : ModuleDynI {
 			return (minIncompletSegDur == std::numeric_limits<uint64_t>::max()) || (qualities[repIdx].curSegDurIn180k > minIncompletSegDur && (qualities[repIdx].getMeta() && qualities[repIdx].getMeta()->EOS));
 		}
 
-		void ensureStartTime() {
+		void ensureStartTime(int repIdx) {
 			if (startTimeInMs == -2)
-				startTimeInMs = clockToTimescale(qualities[0].lastData->get<PresentationTime>().time, DASH_TIMESCALE);
+				startTimeInMs = clockToTimescale(qualities[repIdx].lastData->get<PresentationTime>().time, DASH_TIMESCALE);
 		}
 
 		void sendLocalData(Data currData, int repIdx, uint64_t size, bool EOS) {
-			ensureStartTime();
+			ensureStartTime(repIdx);
 			auto out = getPresignalledData(size, currData, EOS);
 			if (out) {
 				auto const &meta = qualities[repIdx].getMeta();
@@ -324,7 +324,7 @@ struct AdaptiveStreamer : ModuleDynI {
 				for (auto& quality : qualities)
 					quality.curSegDurIn180k -= segDurationIn180k;
 
-				ensureStartTime();
+				ensureStartTime(0);
 				onNewSegment();
 				totalDurationInMs += segDurationInMs;
 				m_host->log(Info, format("Processes segment (total processed: %ss)", totalDurationInMs / 1000.0).c_str());
