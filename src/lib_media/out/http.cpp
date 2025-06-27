@@ -26,7 +26,8 @@ class HTTP : public ModuleS {
 			// create pins
 			outputFinished = addOutput();
 
-			m_sender = createHttpSender({cfg.url, cfg.userAgent, cfg.flags.request, cfg.headers}, m_host);
+			const int maxConnectFailCount = 3;
+			m_sender = createHttpSender({cfg.url, cfg.userAgent, cfg.flags.request, cfg.headers, maxConnectFailCount}, m_host);
 		}
 
 		virtual ~HTTP() {
@@ -44,6 +45,7 @@ class HTTP : public ModuleS {
 				m_sender->send({});
 			} catch (std::exception const& e) {
 				m_host->log(Warning, format("HTTP: %s", e.what()).c_str());
+				throw;
 			}
 
 			auto out = outputFinished->allocData<DataRaw>(0);
