@@ -43,7 +43,8 @@ unittest("remux test: GPAC mp4 mux") {
 }
 
 unittest("remux test: libav mp4 mux") {
-	system("mkdir -p out");
+	int ret = system("mkdir -p out");
+	(void)ret;
 
 	DemuxConfig cfg;
 	cfg.url = "data/beepbop.mp4";
@@ -71,7 +72,8 @@ unittest("remux test: libav mp4 mux") {
 
 	demux->process();
 
-	system("rm -f out/output_libav.mp4");
+	ret = system("rm -f out/output_libav.mp4");
+	(void)ret;
 }
 
 unittest("mux test: GPAC mp4 with generic descriptor") {
