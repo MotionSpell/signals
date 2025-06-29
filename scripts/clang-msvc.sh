@@ -8,11 +8,12 @@ for p in "$@" ; do
       ;;
     -lpthread)
       ;;
+    -pthread)
+      ;;
     -Wl,-rpath*)
       ;;
     -g*)
         params+=("$p")
-        params+=("-gcodeview")
       ;;
     *)
       params+=("$p")
@@ -22,6 +23,7 @@ done
 
 params+=("-D_CRT_SECURE_NO_WARNINGS")
 params+=("-D_CRT_SECURE_NO_DEPRECATE")
+params+=("-D_WINSOCK_DEPRECATED_NO_WARNINGS")
 params+=("-DNOMINMAX")
 params+=("-Xclang")
 params+=("-flto-visibility-public-std")

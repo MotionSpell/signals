@@ -4,7 +4,9 @@
 #include "lib_utils/format.hpp"
 #include "lib_modules/utils/helper.hpp"
 #include "lib_modules/utils/factory.hpp"
+#include "../common/attributes.hpp"
 #include "../common/gpacpp.hpp"
+#include "../common/metadata.hpp"
 
 using namespace Modules;
 
@@ -12,9 +14,8 @@ namespace {
 
 class ISOFileReader {
 	public:
-		void init(GF_ISOFile* m) {
+		void init(GF_ISOFile* m, int trackId) {
 			movie.reset(new gpacpp::IsoFile(m));
-			u32 trackId = movie->getTrackId(1); //FIXME should be a parameter? hence not processed in constructor but in a stateful process? or a control module?
 			trackNumber = movie->getTrackById(trackId);
 			sampleCount = movie->getSampleCount(trackNumber);
 			sampleIndex = 1;
@@ -40,7 +41,7 @@ class GPACDemuxMP4Simple : public Module {
 			if ((e != GF_OK && e != GF_ISOM_INCOMPLETE_FILE) || movie == nullptr) {
 				throw error(format("Could not open file %s for reading (%s).", cfg->path, gf_error_to_string(e)));
 			}
-			reader->init(movie);
+			reader->init(movie, cfg->trackId);
 			output = addOutput();
 		}
 
@@ -51,13 +52,16 @@ class GPACDemuxMP4Simple : public Module {
 				std::unique_ptr<gpacpp::IsoSample> ISOSample = reader->movie->getSample(reader->trackNumber, reader->sampleIndex, sampleDescriptionIndex);
 
 				m_host->log(Debug, format("Found sample #%s/%s of length %s, RAP %s, DTS: %s, CTS: %s",
-				        reader->sampleIndex, reader->sampleCount, ISOSample->dataLength,
-				        ISOSample->IsRAP, ISOSample->DTS + DTSOffset, ISOSample->DTS + DTSOffset + ISOSample->CTS_Offset).c_str());
+				    reader->sampleIndex, reader->sampleCount, ISOSample->dataLength, (int)ISOSample->IsRAP,
+				    ISOSample->DTS + DTSOffset, ISOSample->DTS + DTSOffset + ISOSample->CTS_Offset).c_str());
 				reader->sampleIndex++;
+
+				updateMetadata();
 
 				auto out = output->allocData<DataRaw>(ISOSample->dataLength);
 				memcpy(out->buffer->data().ptr, ISOSample->data, ISOSample->dataLength);
-				out->setMediaTime(ISOSample->DTS + DTSOffset + ISOSample->CTS_Offset, reader->movie->getMediaTimescale(reader->trackNumber));
+				out->set(DecodingTime { timescaleToClock((int64_t)ISOSample->DTS, reader->movie->getMediaTimescale(reader->trackNumber)) });
+				out->set(PresentationTime { timescaleToClock((int64_t)ISOSample->DTS + DTSOffset + ISOSample->CTS_Offset, reader->movie->getMediaTimescale(reader->trackNumber)) });
 				output->post(out);
 			} catch (gpacpp::Error const& err) {
 				if (err.error_ == GF_ISOM_INCOMPLETE_FILE) {
@@ -74,6 +78,25 @@ class GPACDemuxMP4Simple : public Module {
 		KHost* const m_host;
 		std::unique_ptr<ISOFileReader> reader;
 		OutputDefault* output;
+
+		void updateMetadata() {
+			if(auto desc = reader->movie->getDecoderConfig(reader->trackNumber, 1)) {
+				auto dsi = desc->decoderSpecificInfo;
+				std::shared_ptr<MetadataPkt> meta;
+				if(desc->streamType == GF_STREAM_AUDIO) {
+					meta = make_shared<MetadataPkt>(AUDIO_PKT);
+					meta->codec = "aac_raw";
+				} else if (desc->streamType == GF_STREAM_VISUAL) {
+					meta = make_shared<MetadataPkt>(VIDEO_PKT);
+					meta->codec = "h264_avcc";
+				} else {
+					meta = make_shared<MetadataPkt>(UNKNOWN_ST);
+					meta->codec = "";
+				}
+				meta->codecSpecificInfo.assign(dsi->data, dsi->data+dsi->dataLength);
+				output->setMetadata(meta);
+			}
+		}
 };
 
 

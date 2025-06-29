@@ -14,6 +14,7 @@ enum class PixelFormat : int {
 	NV12P010LE, /*10-bit variant of NV12 with 16 bits per component (10 bits of data plus 6 LSB bits zeroed)*/
 	RGB24,
 	RGBA32,
+	CUDA // AV_PIX_FMT_CUDA
 };
 
 }

@@ -19,7 +19,7 @@ unittest("pipeline: source only") {
 
 unittest("pipeline: a non left-connected module is not a source") {
 	Pipeline p;
-	auto data = make_shared<DataRaw>(0);
+	auto data = make_shared<DataRaw>(1);
 	p.addModule<FakeSink>();
 	p.start();
 	p.waitForEndOfStream();

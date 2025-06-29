@@ -42,7 +42,6 @@ void ensureDirRecurse(std::string path) {
 
 class FileSystemSink : public ModuleS {
 	public:
-
 		FileSystemSink(KHost* host, FileSystemSinkConfig cfg)
 			: m_host(host),
 			  m_config(cfg) {

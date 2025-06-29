@@ -4,10 +4,10 @@
 #include "filter.hpp"
 #include "lib_modules/utils/helper.hpp"
 #include "lib_modules/utils/loader.hpp"
-#include "log.hpp" // g_Log
-#include "os.hpp"
-#include "format.hpp"
-#include "tools.hpp" // safe_cast
+#include "lib_utils/log.hpp" // g_Log
+#include "lib_utils/os.hpp"
+#include "lib_utils/format.hpp"
+#include "lib_utils/tools.hpp" // safe_cast
 #include <algorithm>
 #include <cstring>
 #include <sstream>
@@ -52,8 +52,10 @@ Pipeline::Pipeline(LogSink* log, bool isLowLatency, Threading threading)
 }
 
 Pipeline::~Pipeline() {
+	m_log->log(Info, "Pipeline: destroy");
+
 	// Prevent modules from communicating.
-	// this allows to destroy them safely,
+	// This allows to destroy them safely,
 	// without having to topological-sort them.
 	for(auto& m : modules)
 		m->destroyOutputs();
@@ -74,7 +76,7 @@ IFilter * Pipeline::add(char const* type, const void* va) {
 	auto name = format("%s (#%s)", type, (int)modules.size());
 
 	auto createModule = [&](Modules::KHost* host) {
-		return vLoadModule(type, host, va);
+		return loadModule(type, host, va);
 	};
 
 	return addModuleInternal(name, createModule);
@@ -113,7 +115,7 @@ void Pipeline::connect(OutputPin prev, InputPin next, bool inputAcceptMultipleCo
 	{
 		std::unique_lock<std::mutex> lock(remainingNotificationsMutex);
 		if (remainingNotifications != notifications)
-			throw std::runtime_error("Connection but the topology has changed. Not supported yet."); //TODO: to change that, we need to store a state of the Filter.
+			throw std::runtime_error("Connection but the topology has changed. Not supported yet.");
 	}
 
 	n->connect(p->getOutput(prev.index), next.index, inputAcceptMultipleConnections);
@@ -144,7 +146,7 @@ void Pipeline::disconnect(IFilter * prev, int outputIdx, IFilter * next, int inp
 	computeTopology();
 }
 
-std::string Pipeline::dump() const {
+std::string Pipeline::dumpDOT() const {
 	std::stringstream ss;
 	ss << "digraph {" << std::endl;
 	ss << "\trankdir = \"LR\";" << std::endl;
@@ -181,7 +183,7 @@ void Pipeline::waitForEndOfStream() {
 }
 
 void Pipeline::exitSync() {
-	m_log->log(Info, "Pipeline: asked to exit now.");
+	m_log->log(Info, "Pipeline: asked to flush and exit.");
 	for (auto &module : modules) {
 		auto m = safe_cast<Filter>(module.get());
 		if (m->isSource()) {
@@ -220,11 +222,11 @@ void Pipeline::endOfStream() {
 	condition.notify_one();
 }
 
-void Pipeline::registerErrorCallback(std::function<void(const char*)> cbk) {
+void Pipeline::registerErrorCallback(std::function<bool(const char*)> cbk) {
 	errorCbk = cbk;
 }
 
-void Pipeline::exception(std::exception_ptr eptr) {
+bool Pipeline::exception(std::exception_ptr eptr) {
 	try {
 		if (errorCbk)
 			errorCbk("Pipeline exception caught");
@@ -232,8 +234,9 @@ void Pipeline::exception(std::exception_ptr eptr) {
 	} catch (const std::exception &e) {
 		m_log->log(Error, format("Pipeline: exception caught: %s", e.what()).c_str());
 		if (errorCbk)
-			errorCbk(e.what());
+			return errorCbk(e.what());
 	}
+	return false; //not handled properly: subsequent actions may be taken
 }
 
 }

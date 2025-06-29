@@ -74,6 +74,11 @@ string thisExeDir() {
 	return path;
 }
 
+string baseName(const char *path) {
+	string sPath(path);
+	return sPath.substr(sPath.find_last_of("/\\") + 1);
+}
+
 static string GetLastErrorMsg() {
 	auto const errorCode = GetLastError();
 	if (!errorCode)

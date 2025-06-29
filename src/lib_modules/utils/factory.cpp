@@ -14,9 +14,10 @@ struct Entry {
 static Entry registry[1024];
 
 Entry* findEntry(string name) {
-	for(auto& entry : registry)
+	for(auto& entry : registry) {
 		if(entry.name && entry.name == name)
 			return &entry;
+	}
 	return nullptr;
 }
 
@@ -29,7 +30,6 @@ Entry* findFreeEntry() {
 
 namespace Factory {
 int registerModule(const char* name, CreationFunc* func) {
-
 	if(findEntry(name))
 		throw runtime_error("Module '" + string(name) + "' is already registered");
 

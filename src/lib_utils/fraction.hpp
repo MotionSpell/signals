@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 inline
 int64_t pgcd(int64_t a, int64_t b) {
@@ -95,6 +96,11 @@ struct Fraction {
 	}
 	Fraction inverse() const {
 		return Fraction(den, num);
+	}
+	static std::string to_string(const Fraction &v) {
+		char buffer[128];
+		sprintf(buffer, "%lld/%lld", v.num, v.den);
+		return buffer;
 	}
 
 	int64_t num; // holds the sign

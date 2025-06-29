@@ -4,7 +4,7 @@
 #include "plugins/UdpOutput/udp_output.hpp"
 #include "lib_media/in/file.hpp"
 #include "lib_media/transform/restamp.hpp" // BitrateRestamp
-#include "lib_media/utils/regulator.hpp"
+#include "plugins/RegulatorMono/regulator_mono.hpp"
 
 using namespace std;
 using namespace Modules;
@@ -38,11 +38,11 @@ Config parseCommandLine(int argc, char const* argv[]) {
 	cfg.path = files[0];
 
 	if(sscanf(files[1].c_str(), "%d.%d.%d.%d:%d",
-	        &cfg.udpConfig.ipAddr[0],
-	        &cfg.udpConfig.ipAddr[1],
-	        &cfg.udpConfig.ipAddr[2],
-	        &cfg.udpConfig.ipAddr[3],
-	        &cfg.udpConfig.port) != 5)
+	    &cfg.udpConfig.ipAddr[0],
+	    &cfg.udpConfig.ipAddr[1],
+	    &cfg.udpConfig.ipAddr[2],
+	    &cfg.udpConfig.ipAddr[3],
+	    &cfg.udpConfig.port) != 5)
 		throw runtime_error("invalid destination address format");
 
 	return cfg;
@@ -62,12 +62,16 @@ int safeMain(int argc, char const* argv[]) {
 	};
 
 	auto regulate = [&](OutputPin source) -> OutputPin {
-		auto r = pipeline.addNamedModule<Regulator>("Regulator", g_SystemClock);
+		RegulatorMonoConfig rmCfg;
+		auto r = pipeline.add("RegulatorMono", &rmCfg);
 		pipeline.connect(source, r);
 		return GetOutputPin(r);
 	};
 
-	auto file = regulate(restamp(pipeline.addModule<In::File>(cfg.path, 7 * 188)));
+	FileInputConfig fileInputConfig;
+	fileInputConfig.filename = cfg.path;
+	fileInputConfig.blockSize = 7 * 188;
+	auto file = regulate(restamp(pipeline.add("FileInput", &fileInputConfig)));
 	auto sender = pipeline.add("UdpOutput", &cfg.udpConfig);
 	pipeline.connect(file, sender);
 	pipeline.start();

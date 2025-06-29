@@ -22,6 +22,7 @@ struct MemoryFileSystem : IFilePuller {
 			return;
 		callback({(const uint8_t*)resources[url].data(), resources[url].size()});
 	}
+	void askToExit() override {}
 
 	map<string, string> resources;
 	vector<string> requests;
@@ -42,6 +43,7 @@ sub.m3u8
 chunk-01.ts
 chunk-next.ts
 chunk-last.ts
+#EXT-X-ENDLIST
 )";
 
 	HlsDemuxConfig cfg {};

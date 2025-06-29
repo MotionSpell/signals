@@ -1,6 +1,6 @@
 #include "mpeg_dash_parser.hpp"
-#include "sax_xml_parser.hpp"
-#include <lib_utils/time.hpp>
+#include "lib_utils/sax_xml_parser.hpp"
+#include "lib_utils/time.hpp"
 #include <algorithm> // max
 #include <stdexcept>
 
@@ -46,7 +46,7 @@ int Representation::timescale(DashMpd const * const mpd) const {
 unique_ptr<DashMpd> parseMpd(span<const char> text) {
 	auto mpd = make_unique<DashMpd>();
 
-	auto onNodeStart = [&mpd](string name, map<string, string>& attr) {
+	auto onNodeStart = [&mpd](string name, SmallMap<string, string>& attr) {
 		if(name == "AdaptationSet") {
 			AdaptationSet set;
 			set.contentType = attr["contentType"];
@@ -58,13 +58,10 @@ unique_ptr<DashMpd> parseMpd(span<const char> text) {
 			mpd->dynamic = attr["type"] == "dynamic";
 
 			if(!attr["availabilityStartTime"].empty())
-				mpd->availabilityStartTime = parseDate(attr["availabilityStartTime"]);
+				mpd->availabilityStartTime = (int64_t)(parseDate(attr["availabilityStartTime"]) *  1000);
 
 			if(!attr["publishTime"].empty())
-				mpd->publishTime = parseDate(attr["publishTime"]);
-
-			if(!attr["mediaPresentationDuration"].empty())
-				mpd->mediaPresentationDuration = parseIso8601Period(attr["mediaPresentationDuration"]);
+				mpd->publishTime = (int64_t)(parseDate(attr["publishTime"])* 1000);
 
 			if(!attr["minimumUpdatePeriod"].empty())
 				mpd->minUpdatePeriod = parseIso8601Period(attr["minimumUpdatePeriod"]);

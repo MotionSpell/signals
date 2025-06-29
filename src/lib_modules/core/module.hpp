@@ -9,8 +9,6 @@
 
 #include "buffer.hpp"
 #include "metadata.hpp"
-
-// FIXME: remove this
 #include <memory>
 
 namespace Modules {

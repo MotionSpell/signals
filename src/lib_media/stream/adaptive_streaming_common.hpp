@@ -2,7 +2,6 @@
 
 #include "../common/metadata_file.hpp"
 #include "lib_media/common/resolution.hpp"
-#include "lib_modules/utils/helper.hpp"
 #include "lib_modules/utils/helper_dyn.hpp"
 #include "lib_utils/format.hpp"
 #include "lib_utils/log.hpp"
@@ -28,7 +27,6 @@ struct Quality {
 
 class AdaptiveStreamingCommon : public ModuleDynI {
 	public:
-
 		/*created each quality private data*/
 		virtual std::unique_ptr<Quality> createQuality() const = 0;
 		/*called each time segments are ready*/

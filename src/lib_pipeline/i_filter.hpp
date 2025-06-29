@@ -41,7 +41,9 @@ inline OutputPin GetOutputPin(IFilter* mod, int index=0) {
 
 struct IEventSink {
 	virtual void endOfStream() = 0;
-	virtual void exception(std::exception_ptr eptr) = 0;
+
+	/*returns true when the exception is handled properly and doesn't require subsequent actions (e.g. stopping the module)*/
+	virtual bool exception(std::exception_ptr eptr) = 0;
 };
 
 }

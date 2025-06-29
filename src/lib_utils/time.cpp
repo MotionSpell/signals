@@ -107,17 +107,27 @@ static time_t pTimegm(struct tm * t) {
 	return r;
 }
 
-int64_t parseDate(std::string s) {
-	int year, month, day, hour, minute, second;
-	int ret = sscanf(s.c_str(), "%04d-%02d-%02dT%02d:%02d:%02d",
-	        &year,
-	        &month,
-	        &day,
-	        &hour,
-	        &minute,
-	        &second);
-	if(ret != 6)
+Fraction parseDate(std::string s) {
+	int year, month, day, hour, minute, timezonehour = 0, timezoneminute = 0;
+	double second;
+	int ret = sscanf(s.c_str(), "%04d-%02d-%02dT%02d:%02d:%lf%03d:%02dZ",
+	    &year,
+	    &month,
+	    &day,
+	    &hour,
+	    &minute,
+	    &second,
+	    &timezonehour,
+	    &timezoneminute);
+	if(ret < 6 || ret == 7)
 		throw std::runtime_error("Invalid date '" + s + "'");
+	else if (ret > 6)
+		if (timezonehour < 0)
+			timezoneminute = -timezoneminute; // fix sign on minutes
+
+	// negative values won't affect the result of pTimegm()
+	minute -= timezoneminute;
+	hour -= timezonehour;
 
 	tm date {};
 	date.tm_year = year - 1900;
@@ -125,9 +135,9 @@ int64_t parseDate(std::string s) {
 	date.tm_mday = day;
 	date.tm_hour = hour;
 	date.tm_min = minute;
-	date.tm_sec = second;
+	date.tm_sec = (int)second;
 
-	return pTimegm(&date);
+	return Fraction((int64_t)pTimegm(&date) * 1000 + (int64_t)(1000 * second) - 1000 * (int)second, 1000);
 }
 
 struct UtcClock : IUtcClock {

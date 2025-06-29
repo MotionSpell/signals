@@ -26,7 +26,7 @@ unittest("pipeline graph: empty") {
 	rankdir = "LR";
 }
 )";
-	ASSERT_EQUALS(expected, p.dump());
+	ASSERT_EQUALS(expected, p.dumpDOT());
 }
 
 unittest("pipeline graph: add module") {
@@ -39,7 +39,7 @@ unittest("pipeline graph: add module") {
 }
 )";
 
-	ASSERT_EQUALS(expected, p.dump());
+	ASSERT_EQUALS(expected, p.dumpDOT());
 }
 
 unittest("pipeline graph: add connection") {
@@ -56,7 +56,7 @@ unittest("pipeline graph: add connection") {
 }
 )";
 
-	ASSERT_EQUALS(expected, p.dump());
+	ASSERT_EQUALS(expected, p.dumpDOT());
 }
 
 unittest("pipeline graph: disconnect") {
@@ -73,7 +73,7 @@ unittest("pipeline graph: disconnect") {
 }
 )";
 
-	ASSERT_EQUALS(expected, p.dump());
+	ASSERT_EQUALS(expected, p.dumpDOT());
 }
 
 unittest("pipeline graph: remove module") {
@@ -85,7 +85,7 @@ unittest("pipeline graph: remove module") {
 	rankdir = "LR";
 }
 )";
-	ASSERT_EQUALS(expected, p.dump());
+	ASSERT_EQUALS(expected, p.dumpDOT());
 }
 
 unittest("pipeline graph: remove wrong connection") {

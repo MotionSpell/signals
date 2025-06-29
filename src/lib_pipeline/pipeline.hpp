@@ -1,7 +1,7 @@
 #pragma once
 
 #include "i_filter.hpp"
-#include "log_sink.hpp"
+#include "lib_utils/log_sink.hpp"
 #include "lib_modules/modules.hpp"
 #include <condition_variable>
 #include <functional>
@@ -52,19 +52,19 @@ class Pipeline : public IEventSink {
 		void connect(OutputPin out, InputPin in, bool inputAcceptMultipleConnections = false);
 		void disconnect(IFilter * prev, int outputIdx, IFilter * next, int inputIdx);
 
-		std::string dump() const; // dump pipeline using DOT Language
+		std::string dumpDOT() const; // dump pipeline using DOT Language
 
 		void start();
 		void waitForEndOfStream();
 		void exitSync(); /*ask for all sources to finish*/
 
-		void registerErrorCallback(std::function<void(const char*)>);
+		void registerErrorCallback(std::function<bool(const char*)>);
 
 	private:
 		IFilter * addModuleInternal(std::string name, CreationFunc createModule);
 		void computeTopology();
 		void endOfStream();
-		void exception(std::exception_ptr eptr);
+		bool/*handled*/ exception(std::exception_ptr eptr);
 
 		/*FIXME: the block below won't be necessary once we inject correctly*/
 		int getNumBlocks(int numBlock) const {
@@ -82,7 +82,7 @@ class Pipeline : public IEventSink {
 		std::condition_variable condition;
 		size_t notifications = 0, remainingNotifications = 0;
 		std::exception_ptr eptr;
-		std::function<void(const char*)> errorCbk;
+		std::function<bool(const char*)> errorCbk;
 };
 
 }

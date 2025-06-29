@@ -3,12 +3,12 @@
 #include "lib_modules/utils/loader.hpp"
 #include <stdexcept>
 #include "lib_media/common/metadata.hpp" // MetadataPktVideo
+#include "lib_media/decode/decoder.hpp"
 #include "lib_media/demux/libav_demux.hpp"
 #include "lib_media/encode/libav_encode.hpp"
 #include "lib_media/mux/mux_mp4_config.hpp"
 #include "lib_media/stream/apple_hls.hpp"
 #include "lib_media/stream/hls_muxer_libav.hpp"
-#include "lib_media/stream/ms_hss.hpp"
 #include "modules_common.hpp"
 #include "lib_utils/sysclock.hpp"
 #include "lib_utils/os.hpp"
@@ -670,7 +670,9 @@ unittest("[DISABLED] adaptive streaming combination coverage") {
 	for (int i = 0; i < demux->getNumOutputs(); ++i) {
 		std::string prefix;
 		if (demux->getOutput(i)->getMetadata()->isVideo()) {
-			decode.push_back(loadModule("Decoder", &NullHost, (void*)(uintptr_t)VIDEO_PKT));
+			DecoderConfig decCfg;
+			decCfg.type = VIDEO_PKT;
+			decode.push_back(loadModule("Decoder", &NullHost, &decCfg));
 			EncoderConfig p { EncoderConfig::Video };
 			auto const metaVideo = safe_cast<const MetadataPktVideo>(demux->getOutput(i)->getMetadata());
 			auto res = metaVideo->resolution;
@@ -678,7 +680,9 @@ unittest("[DISABLED] adaptive streaming combination coverage") {
 			encode.push_back(loadModule("Encoder", &NullHost, &p));
 			prefix = Stream::AdaptiveStreamingCommon::getCommonPrefixVideo(i, res);
 		} else if (demux->getOutput(i)->getMetadata()->isAudio()) {
-			decode.push_back(loadModule("Decoder", &NullHost, (void*)(uintptr_t)AUDIO_PKT));
+			DecoderConfig decCfg;
+			decCfg.type = AUDIO_PKT;
+			decode.push_back(loadModule("Decoder", &NullHost, &decCfg));
 			EncoderConfig p { EncoderConfig::Audio };
 			auto const metaAudio = safe_cast<const MetadataPktAudio>(demux->getOutput(i)->getMetadata());
 			encode.push_back(loadModule("Encoder", &NullHost, &p));

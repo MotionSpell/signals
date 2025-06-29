@@ -16,7 +16,7 @@ target_include_directories(appcommon PUBLIC
     $<INSTALL_INTERFACE:include/signals>
     )
 
-target_link_libraries(appcommon PUBLIC utils)
+target_link_libraries(appcommon PUBLIC utils pipeline)
 
 target_compile_options(appcommon PRIVATE
     -Wall -Wextra -Werror

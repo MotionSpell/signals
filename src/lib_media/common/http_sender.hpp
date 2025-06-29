@@ -8,6 +8,8 @@
 //|
 //|  {
 //|    auto s = createHttpSender(...);
+//|    s->appendPrefix(prefix_part1); // sent once per (re)connection
+//|    s->appendPrefix(prefix_part2); // append
 //|    s->send(data1);
 //|    s->send(data2);
 //|    s->send({}); // flush (this line is optional, but guarantees that all data will be transfered)
@@ -17,7 +19,7 @@
 struct HttpSender {
 	virtual ~HttpSender() = default;
 	virtual void send(span<const uint8_t> data) = 0; // (send an empty span to flush)
-	virtual void setPrefix(span<const uint8_t> prefix) = 0;
+	virtual void appendPrefix(span<const uint8_t> prefix) = 0; // may be called multiple times
 };
 
 #include <string>

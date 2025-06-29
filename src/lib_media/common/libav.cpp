@@ -1,4 +1,5 @@
 #include "libav.hpp"
+#include "libav_hw.hpp"
 #include "pcm.hpp"
 #include "picture_allocator.hpp"
 #include "lib_utils/tools.hpp"
@@ -11,6 +12,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/pixdesc.h> // av_get_pix_fmt_name
+#include <libavutil/hwcontext.h> // av_hwdevice_ctx_create
 }
 
 namespace Modules {
@@ -23,6 +25,15 @@ std::shared_ptr<AVCodecContext> shptr(AVCodecContext *p) {
 
 
 namespace Modules {
+
+HardwareContextCuda::HardwareContextCuda() {
+	if (av_hwdevice_ctx_create((AVBufferRef**)&device, AV_HWDEVICE_TYPE_CUDA, NULL, NULL, 0) < 0)
+		throw std::runtime_error("Failed to create specified hardware device (CUDA)");
+}
+
+HardwareContextCuda::~HardwareContextCuda() {
+	av_buffer_unref((AVBufferRef**)&device);
+}
 
 void AVCodecContextDeleter(AVCodecContext *p) {
 	avcodec_close(p);
@@ -76,6 +87,9 @@ int signalsIdToAvCodecId(const char* origName) {
 
 	std::string name = origName;
 
+	if(name == "mpeg2video")
+		return AV_CODEC_ID_MPEG2VIDEO;
+
 	// Workaround: FFmpeg only has one AV_CODEC_ID value
 	// for both "Annex-B H.264" and "AVCC H.264".
 	if(name == "h264_avcc")
@@ -95,6 +109,12 @@ int signalsIdToAvCodecId(const char* origName) {
 	// for MPEG audio layer 1, 2 or 3.
 	if(name == "mp1" || name == "mp2" || name == "mp3")
 		return AV_CODEC_ID_MP3;
+
+	if(name == "ac3")
+		return AV_CODEC_ID_AC3;
+
+	if(name == "eac3")
+		return AV_CODEC_ID_EAC3;
 
 	auto i = g_mapping.name_to_id.find(name);
 	if(i == g_mapping.name_to_id.end()) {
@@ -146,7 +166,7 @@ bool isPlanar(const AVCodecContext* codecCtx) {
 	case AV_SAMPLE_FMT_FLTP:
 		return true;
 	default:
-		throw std::runtime_error(format("Unknown libav audio format [%s] (2)", codecCtx->sample_fmt));
+		throw std::runtime_error(format("Unknown libav audio format [%s] (2)", av_get_sample_fmt_name(codecCtx->sample_fmt)));
 	}
 }
 
@@ -158,7 +178,7 @@ AudioSampleFormat getFormat(const AVCodecContext* codecCtx) {
 	case AV_SAMPLE_FMT_FLT: return Modules::F32;
 	case AV_SAMPLE_FMT_FLTP: return Modules::F32;
 	default:
-		throw std::runtime_error(format("Unknown libav audio format [%s] (3)", codecCtx->sample_fmt));
+		throw std::runtime_error(format("Unknown libav audio format [%s] (3)", av_get_sample_fmt_name(codecCtx->sample_fmt)));
 	}
 }
 

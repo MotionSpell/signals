@@ -8,7 +8,7 @@ struct IScheduler;
 
 struct RectifierConfig {
 	std::shared_ptr<IClock> clock;
-	IScheduler* scheduler;
+	std::shared_ptr<IScheduler> scheduler;
 	Fraction frameRate;
 };
 

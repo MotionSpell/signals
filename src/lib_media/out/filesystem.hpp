@@ -3,6 +3,6 @@
 #include <string>
 
 struct FileSystemSinkConfig {
-	std::string directory;
+	std::string directory = ".";
 };
 

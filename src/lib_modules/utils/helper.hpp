@@ -44,13 +44,12 @@ void ConnectOutput(IOutput* o, std::function<void(Data)> f);
 
 class OutputDefault : public Output {
 	public:
-		OutputDefault(size_t allocatorMaxSize, Metadata metadata = nullptr)
+		OutputDefault(size_t allocatorMaxSize)
 			: allocator(createMemoryAllocator(allocatorMaxSize)) {
-			setMetadata(metadata);
 		}
-		template<typename OtherDataType>
-		std::shared_ptr<OtherDataType> allocData(size_t size) {
-			return alloc<OtherDataType>(allocator, size);
+		template<typename OtherDataType, typename ...Args>
+		std::shared_ptr<OtherDataType> allocData(Args&&... args) {
+			return alloc<OtherDataType>(allocator, std::forward<Args>(args)...);
 		}
 
 		void resetAllocator(size_t allocatorSize) {

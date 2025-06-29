@@ -7,6 +7,7 @@
 #include "lib_modules/core/connection.hpp"
 #include "lib_media/common/metadata.hpp"
 #include "lib_media/common/attributes.hpp"
+#include "lib_media/decode/decoder.hpp"
 #include "lib_media/demux/libav_demux.hpp"
 
 using namespace Tests;
@@ -14,7 +15,6 @@ using namespace Modules;
 using namespace std;
 
 unittest("LibavDemux => Decoder: output media times must increase") {
-
 	vector<int64_t> mediaTimes;
 	auto onPic = [&](Data data) {
 		mediaTimes.push_back(data->get<PresentationTime>().time);
@@ -23,15 +23,17 @@ unittest("LibavDemux => Decoder: output media times must increase") {
 	DemuxConfig cfg;
 	cfg.url = "data/h264.ts";
 	auto demux = loadModule("LibavDemux", &NullHost, &cfg);
-	auto decoder = loadModule("Decoder", &NullHost, (void*)(intptr_t)VIDEO_PKT);
-	ConnectOutputToInput(demux->getOutput(0), decoder->getInput(0));
-	ConnectOutput(decoder->getOutput(0), onPic);
+	DecoderConfig decCfg;
+	decCfg.type = VIDEO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
+	ConnectOutputToInput(demux->getOutput(0), decode->getInput(0));
+	ConnectOutput(decode->getOutput(0), onPic);
 
 	for(int i=0; i < 100; ++i)
 		demux->process();
 
 	demux->flush();
-	decoder->flush();
+	decode->flush();
 
 	// output media times must increase
 	ASSERT(is_sorted(mediaTimes.begin(), mediaTimes.end()));

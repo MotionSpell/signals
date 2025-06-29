@@ -2,29 +2,14 @@
 
 namespace Modules {
 
-auto const ALIGN = 512 / 8; /*AVX-512*/
-
-std::shared_ptr<DataPicture> DataPicture::create(OutputDefault *out, Resolution res, Resolution resInternal, PixelFormat format) {
-	if (!out) return nullptr;
-
-	auto r = out->allocData<DataPicture>(0);
-
-	DataPicture::setup(r.get(), res, resInternal, format);
-
-	return r;
-}
-
 void DataPicture::setup(DataPicture* r, Resolution res, Resolution resInternal, PixelFormat format) {
-	// 16 bytes of padding, as required by most SIMD processing (e.g swscale)
-	r->buffer->resize(PictureFormat::getSize(resInternal, format) + ALIGN + 512 / 8);
-
 	r->format.format = format;
 	r->format.res = res;
 	r->setVisibleResolution(res);
 
 	auto ptr = r->buffer->data().ptr;
-	if ((uintptr_t)ptr & (ALIGN - 1))
-		ptr += ALIGN - ((uintptr_t)ptr % ALIGN);
+	if ((uintptr_t)ptr & (PictureFormat::ALIGNMENT - 1))
+		ptr += PictureFormat::ALIGNMENT - ((uintptr_t)ptr % PictureFormat::ALIGNMENT);
 
 	switch (format) {
 	case PixelFormat::Y8: {
@@ -113,11 +98,18 @@ void DataPicture::setup(DataPicture* r, Resolution res, Resolution resInternal, 
 		r->m_planeCount = 1;
 		break;
 	}
+	case PixelFormat::CUDA:    {
+		auto *ptr2 = (uintptr_t*)r->buffer->data().ptr;
+		r->m_planeCount = 4;
+		for (int i=0; i<r->m_planeCount; ++i) {
+			r->m_planes[i] = (uint8_t*)*ptr2;
+			ptr2++;
+			r->m_stride[i] = (size_t)*ptr2;
+			ptr2++;
+		}
+		break;
+	}
 	default: throw std::runtime_error("Unknown pixel format for DataPicture. Please contact your vendor");
 	}
-}
-
-std::shared_ptr<DataPicture> DataPicture::create(OutputDefault *out, Resolution res, PixelFormat format) {
-	return create(out, res, res, format);
 }
 }

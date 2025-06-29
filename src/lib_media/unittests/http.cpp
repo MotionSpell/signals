@@ -2,7 +2,7 @@
 #include "lib_media/out/http.hpp"
 #include "lib_modules/utils/loader.hpp"
 #include "lib_modules/modules.hpp"
-#include <string.h> // memcpy
+#include <cstring> // memcpy
 
 // To run the below tests, you must first launch the fake webserver:
 // $ ./scripts/http-post-server.sh
@@ -19,7 +19,7 @@ std::shared_ptr<DataBase> createPacket(span<const char> contents) {
 
 }
 
-unittest("HTTP: should fail if the server doesn't exist") {
+secondclasstest("HTTP: should fail if the server doesn't exist") {
 	HttpOutputConfig cfg {};
 	cfg.flags.InitialEmptyPost = true;
 	cfg.url = "http://unexisting_domain_name/nonexisting_page:1234";

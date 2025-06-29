@@ -1,6 +1,7 @@
 #include "video_generator.hpp"
+#include "../common/attributes.hpp"
 #include "../common/metadata.hpp"
-#include <string.h> // memset
+#include <cstring> // memset
 #include <cassert>
 #include <map>
 
@@ -143,7 +144,7 @@ void VideoGenerator::process() {
 	}
 
 	auto const dim = Resolution(320, 180);
-	auto pic = DataPicture::create(output, dim, PixelFormat::I420);
+	auto pic = output->allocData<DataPicture>(dim, PixelFormat::I420);
 
 	// generate video
 	auto const p = pic->buffer->data().ptr;
@@ -194,7 +195,7 @@ void VideoGenerator::process() {
 
 	auto const framePeriodIn180k = IClock::Rate / config.frameRate;
 	assert(IClock::Rate % config.frameRate == 0);
-	pic->setMediaTime(m_numFrames * framePeriodIn180k);
+	pic->set(PresentationTime{(int64_t)m_numFrames * framePeriodIn180k});
 
 	output->post(pic);
 

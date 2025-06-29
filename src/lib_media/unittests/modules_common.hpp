@@ -13,7 +13,7 @@ struct Meta {
 		    && this->codecName == rhs.codecName
 		    && this->lang == rhs.lang
 		    && this->durationIn180k == rhs.durationIn180k
-		    //FIXME: sizes are sometimes different with FFmpeg on different platforms: && this->filesize == rhs.filesize
+		    //tests only: sizes are sometimes different with FFmpeg on different platforms: && this->filesize == rhs.filesize
 		    && this->latencyIn180k == rhs.latencyIn180k
 		    && this->startsWithRAP == rhs.startsWithRAP
 		    && this->eos == rhs.eos;

@@ -1,5 +1,4 @@
 #include "libav_mux.hpp"
-#include "lib_modules/utils/helper.hpp"
 #include "lib_modules/utils/helper_dyn.hpp"
 #include "lib_modules/utils/factory.hpp"
 #include "lib_utils/tools.hpp"
@@ -14,6 +13,7 @@
 extern "C" {
 #include <libavformat/avformat.h> // AVOutputFormat
 #include <libavformat/avio.h> // avio_open2
+#include <libavutil/channel_layout.h>
 }
 
 using namespace Modules;
@@ -23,7 +23,6 @@ namespace {
 
 class LibavMux : public ModuleDynI {
 	public:
-
 		LibavMux(KHost* host, MuxConfig cfg)
 			: m_host(host), m_formatCtx(avformat_alloc_context()), optionsDict(typeid(*this).name(), cfg.options) {
 			if (!m_formatCtx)
@@ -74,7 +73,6 @@ class LibavMux : public ModuleDynI {
 		}
 
 		void process() override {
-
 			// av_interleaved_write_frame will segfault if already flushed
 			if(m_flushed) {
 				m_host->log(Warning, "Ignoring input data after flush");
@@ -114,7 +112,7 @@ class LibavMux : public ModuleDynI {
 
 			AVPacket pkt;
 			fillAvPacket(data, &pkt);
-			const AVRational inputTimebase = { (int)1, (int)IClock::Rate };
+			const AVRational inputTimebase = { 1, (int)IClock::Rate };
 			auto const avStream = m_formatCtx->streams[inputIdx2AvStream[inputIdx]];
 			pkt.dts = av_rescale_q(pkt.dts, inputTimebase, avStream->time_base);
 			pkt.pts = av_rescale_q(pkt.pts, inputTimebase, avStream->time_base);
@@ -185,6 +183,7 @@ class LibavMux : public ModuleDynI {
 			} else if(auto info = dynamic_cast<const MetadataPktAudio*>(metadata)) {
 				codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
 				codecpar->sample_rate = info->sampleRate;
+				//codecpar->channels = info->numChannels;
 				av_channel_layout_default(&codecpar->ch_layout, info->numChannels);
 				codecpar->frame_size = info->frameSize;
 			} else {
@@ -212,7 +211,6 @@ class LibavMux : public ModuleDynI {
 		}
 
 		void fillAvPacket(Data data, AVPacket* newPkt) {
-
 			// only insert headers for video, not for audio (e.g would break AAC)
 			auto const videoMetadata = dynamic_cast<const MetadataPktVideo*>(data->getMetadata().get());
 			auto const key = data->get<CueFlags>().keyframe;
@@ -244,14 +242,14 @@ class LibavMux : public ModuleDynI {
 
 };
 
-Modules::IModule* createObject(KHost* host, void* va) {
+IModule* createObject(KHost* host, void* va) {
 	auto config = (MuxConfig*)va;
 	enforce(host, "LibavMux: host can't be NULL");
 	enforce(config, "LibavMux: config can't be NULL");
 
 	avformat_network_init();
 
-	return Modules::createModule<LibavMux>(host, *config).release();
+	return createModule<LibavMux>(host, *config).release();
 }
 
 auto const registered = Factory::registerModule("LibavMux", &createObject);

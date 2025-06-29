@@ -1,10 +1,10 @@
 #include <memory>
 #include <vector>
 #include <fstream>
-#include "os.hpp"
-#include "tools.hpp"
-#include "core/module.hpp"
-#include "utils/factory.hpp"
+#include "lib_utils/os.hpp"
+#include "lib_utils/tools.hpp"
+#include "lib_modules/core/module.hpp"
+#include "lib_modules/utils/factory.hpp"
 
 using namespace std;
 
@@ -52,7 +52,7 @@ static string locatePlugin(const char* name) {
 	throw runtime_error(msg);
 }
 
-shared_ptr<IModule> vLoadModule(const char* name, KHost* host, const void* va) {
+shared_ptr<IModule> loadModule(const char* name, KHost* host, const void* va) {
 	auto const libPath = locatePlugin(name);
 
 	// create plugin from our own static (internal) factory
@@ -67,10 +67,6 @@ shared_ptr<IModule> vLoadModule(const char* name, KHost* host, const void* va) {
 		delete mod;
 	};
 	return shared_ptr<IModule>(func(name, host, const_cast<void*>(va)), deleter);
-}
-
-shared_ptr<IModule> loadModule(const char* name, KHost* host, const void* va) {
-	return vLoadModule(name, host, va);
 }
 
 }

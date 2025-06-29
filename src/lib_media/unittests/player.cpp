@@ -3,6 +3,7 @@
 #include "lib_modules/utils/loader.hpp"
 #include "lib_utils/tools.hpp"
 #include "lib_media/common/pcm.hpp"
+#include "lib_media/decode/decoder.hpp"
 #include "lib_media/demux/libav_demux.hpp"
 #include "lib_media/out/null.hpp"
 #include "lib_media/transform/audio_convert.hpp"
@@ -29,7 +30,9 @@ secondclasstest("packet type erasure + multi-output: libav Demux -> libav Decode
 	}
 	ASSERT(videoIndex != -1);
 	auto metadata = demux->getOutput(videoIndex)->getMetadata();
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)metadata->type);
+	DecoderConfig decCfg;
+	decCfg.type = metadata->type;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 	auto render = Modules::loadModule("SDLVideo", &NullHost, nullptr);
 
 	ConnectOutputToInput(demux->getOutput(videoIndex), decode->getInput(0));
@@ -54,7 +57,9 @@ secondclasstest("packet type erasure + multi-output: libav Demux -> libav Decode
 	}
 	ASSERT(audioIndex != -1);
 	auto metadata = demux->getOutput(audioIndex)->getMetadata();
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)metadata->type);
+	DecoderConfig decCfg;
+	decCfg.type = metadata->type;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 	auto srcFormat = PcmFormat(44100, 1, AudioLayout::Mono, AudioSampleFormat::F32, AudioStruct::Planar);
 	auto dstFormat = PcmFormat(44100, 2, AudioLayout::Stereo, AudioSampleFormat::S16, AudioStruct::Interleaved);
 	auto converterCfg = AudioConvertConfig { srcFormat, dstFormat, -1 };

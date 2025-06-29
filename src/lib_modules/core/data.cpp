@@ -17,7 +17,7 @@ SpanC DataBase::getAttribute(int typeId) const {
 	auto first = attributeOffset.find(typeId);
 	if(first == attributeOffset.end())
 		throw std::runtime_error("Attribute not found");
-	return {attributes.data() + *first, 0};
+	return {attributes.data() + (*first).value, 0};
 }
 
 void DataBase::setAttribute(int typeId, SpanC data) {
@@ -27,10 +27,9 @@ void DataBase::setAttribute(int typeId, SpanC data) {
 	{
 		auto first = attributeOffset.find(typeId);
 		if(first != attributeOffset.end()) {
-
-			// HACK for PresentationTime. Remove this when the client code is fixed.
-			if(typeId == 0x35A12022) {
-				memcpy(attributes.data() + *first, data.ptr, data.len);
+			// HACK for DecodingTime and PresentationTime.
+			if(typeId == 0x35A12022 || typeId == 0x5DF434D0) {
+				memcpy(attributes.data() + (*first).value, data.ptr, data.len);
 				return;
 			}
 
@@ -49,46 +48,23 @@ void DataBase::copyAttributes(DataBase const& from) {
 	attributes = from.attributes;
 }
 
-std::shared_ptr<DataBase> clone(std::shared_ptr<const DataBase> data) {
-	auto clone = std::make_shared<DataBaseRef>(data);
-	clone->copyAttributes(*data);
+DataRaw::DataRaw(size_t size) {
+	if (size > 0)
+		buffer = std::make_shared<RawBuffer>(size);
+}
+
+std::shared_ptr<DataBase> DataRaw::clone() const {
+	std::shared_ptr<DataBase> clone = std::make_shared<DataRaw>(0);
+	DataBase::clone(this, clone.get());
 	return clone;
 }
 
-DataBaseRef::DataBaseRef(std::shared_ptr<const DataBase> data) {
-	if (data) {
-		// don't copy attributes as they can't be overwritten
-		setMetadata(data->getMetadata());
-		auto ref = std::dynamic_pointer_cast<const DataBaseRef>(data);
-		if (ref) {
-			dataRef = ref->getData();
-		} else {
-			dataRef = data;
-		}
-		buffer = dataRef->buffer;
-	}
-}
-
-std::shared_ptr<const DataBase> DataBaseRef::getData() const {
-	return dataRef;
-}
-
-DataRaw::DataRaw(size_t size) {
+DataRawResizable::DataRawResizable(size_t size) : DataRaw(0) {
 	buffer = std::make_shared<RawBuffer>(size);
 }
 
-}
-
-// TODO: remove this
-#include "lib_media/common/attributes.hpp"
-
-namespace Modules {
-DataBase::DataBase() {
-	set(PresentationTime{});
-}
-
-void DataBase::setMediaTime(int64_t time, uint64_t timescale) {
-	set(PresentationTime{timescaleToClock(time, timescale)});
+void DataRawResizable::resize(size_t size) {
+	std::dynamic_pointer_cast<RawBuffer>(buffer)->resize(size);
 }
 
 }

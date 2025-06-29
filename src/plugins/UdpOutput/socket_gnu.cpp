@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h> // strerror
-#include <stdio.h>
+#include <cstdio> // sprintf
 
 using namespace std;
 

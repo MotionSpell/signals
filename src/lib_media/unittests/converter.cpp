@@ -3,7 +3,6 @@
 #include "lib_modules/utils/loader.hpp"
 #include "lib_media/common/metadata.hpp"
 #include "lib_media/common/attributes.hpp"
-#include "lib_media/transform/audio_gap_filler.hpp"
 #include "lib_media/transform/audio_convert.hpp"
 #include "lib_media/utils/recorder.hpp"
 #include "lib_utils/tools.hpp"
@@ -30,10 +29,9 @@ shared_ptr<DataPcm> getInterleavedPcmData() {
 		47, 87,
 	};
 
-	auto r = make_shared<DataPcm>(0);
-	r->format = fmt;
-	r->setSampleCount(8);
+	auto r = make_shared<DataPcm>(8, fmt);
 	memcpy(r->getPlane(0), (uint8_t*)data, sizeof data);
+	r->set(PresentationTime{0});
 	r->setMetadata(make_shared<MetadataRawAudio>());
 	return r;
 }
@@ -91,9 +89,8 @@ unittest("audio converter: multiple flushes while upsampling") {
 	int inputSize = 0;
 	std::vector<uint8_t> buf(3110400);
 
-	auto data = make_shared<DataPcm>(0);
-	data->format = srcFormat;
-	data->setSampleCount(buf.size()/srcFormat.getBytesPerSample());
+	auto data = make_shared<DataPcm>(buf.size()/srcFormat.getBytesPerSample(), srcFormat);
+	data->set(PresentationTime{0});
 	memcpy(data->getPlane(0), buf.data(), buf.size());
 
 	inputSize += buf.size();
@@ -194,9 +191,8 @@ void framingTest(int inSamplesPerFrame, int outSamplesPerFrame) {
 	auto format = PcmFormat(44100, 2, Stereo, S16, Planar);
 
 	const auto inFrameSize = inSamplesPerFrame * format.getBytesPerSample() / format.numPlanes;
-	auto data = make_shared<DataPcm>(0);
-	data->format = format;
-	data->setSampleCount(inSamplesPerFrame);
+	auto data = make_shared<DataPcm>(inSamplesPerFrame, format);
+	data->set(PresentationTime{0});
 
 	std::vector<uint8_t> input(inFrameSize);
 	const int modulo = std::min(inFrameSize, 256);
@@ -254,20 +250,20 @@ void framingTest(int inSamplesPerFrame, int outSamplesPerFrame) {
 }
 }
 
-unittest("audio converter: same framing size.") {
+unittest("audio converter: same framing size") {
 	framingTest(1024, 1024);
 	framingTest(111, 111);
 	framingTest(11, 11);
 	framingTest(1, 1);
 }
 
-unittest("audio converter: smaller framing size.") {
+unittest("audio converter: smaller framing size") {
 	framingTest(1152, 1024);
 	framingTest(1152, 512);
 	framingTest(2, 1);
 }
 
-unittest("audio converter: bigger framing size.") {
+unittest("audio converter: bigger framing size") {
 	framingTest(1024, 1152);
 	framingTest(1024, 4096);
 }
@@ -285,10 +281,8 @@ unittest("audio converter: timestamp passthrough") {
 	auto converter = loadModule("AudioConvert", &NullHost, &cfg);
 	ConnectOutput(converter->getOutput(0), onFrame);
 
-	auto data = make_shared<DataPcm>(0);
-	data->setMediaTime(777777);
-	data->format = format;
-	data->setSampleCount(1024);
+	auto data = make_shared<DataPcm>(1024, format);
+	data->set(PresentationTime{777777});
 	converter->getInput(0)->push(data);
 	converter->flush();
 
@@ -301,10 +295,8 @@ unittest("audio converter: timestamp gap") {
 	auto format = PcmFormat(44100, 1, Mono, S16, Planar);
 
 	auto createSample = [&](int64_t mediaTime) {
-		auto data = make_shared<DataPcm>(0);
-		data->setMediaTime(mediaTime);
-		data->format = format;
-		data->setSampleCount(inSamplesPerFrame);
+		auto data = make_shared<DataPcm>(inSamplesPerFrame, format);
+		data->set(PresentationTime{mediaTime});
 		return data;
 	};
 
@@ -344,14 +336,13 @@ unittest("audio gap filler") {
 	const std::vector<int64_t> in =  { 1, 2, 3,    5, 6, 7, 8, 7, 8, 9, 1000, 1001, 1002, 3, 4, 5 };
 	const std::vector<int64_t> out = { 1, 2, 3, 4, 5, 6, 7, 8,       9, 1000, 1001, 1002, 3, 4, 5 };
 	auto recorder = createModule<Utils::Recorder>(&NullHost);
-	auto gapFiller = createModule<Transform::AudioGapFiller>(&NullHost, out.size());
+	auto toleranceInFrames = (int64_t)out.size();
+	auto gapFiller = loadModule("AudioGapFiller", &NullHost, &toleranceInFrames);
 	ConnectOutputToInput(gapFiller->getOutput(0), recorder->getInput(0));
 	for (auto &val : in) {
-		auto data = make_shared<DataPcm>(0);
-		data->format = format;
-		data->setSampleCount(numSamples);
-		data->setMediaTime(val * numSamples, format.sampleRate);
-		gapFiller->processOne(data);
+		auto data = make_shared<DataPcm>(numSamples, format);
+		data->set(PresentationTime { timescaleToClock(val * numSamples, format.sampleRate) });
+		gapFiller->getInput(0)->push(data);
 	}
 	recorder->processOne(nullptr);
 

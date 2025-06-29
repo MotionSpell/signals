@@ -3,6 +3,7 @@
 #include "lib_media/common/picture.hpp" // PictureFormat
 #include "lib_modules/utils/loader.hpp"
 #include "lib_media/common/metadata.hpp"
+#include "lib_media/decode/decoder.hpp"
 #include "lib_media/demux/libav_demux.hpp"
 #include "lib_media/encode/libav_encode.hpp"
 #include "lib_media/in/file.hpp"
@@ -37,7 +38,9 @@ void libav_mux(std::string format) {
 
 	//create the video decode
 	auto metadata = safe_cast<const MetadataPkt>(demux->getOutput(videoIndex)->getMetadata());
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)VIDEO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = VIDEO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 	EncoderConfig encCfg { EncoderConfig::Video };
 	auto encode = loadModule("Encoder", &NullHost, &encCfg);
 	MuxConfig muxConfig = {"out/output_video_libav", format, ""};
@@ -79,7 +82,9 @@ unittest("transcoder: video simple (gpac mux MP4)") {
 	ASSERT(videoIndex != -1);
 
 	//create the video decode
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)VIDEO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = VIDEO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 	EncoderConfig encCfg { EncoderConfig::Video };
 	auto encode = loadModule("Encoder", &NullHost, &encCfg);
 
@@ -97,12 +102,16 @@ unittest("transcoder: jpg to jpg") {
 	const std::string filename("data/sample.jpg");
 	auto decode = loadModule("JPEGTurboDecode", &NullHost, nullptr);
 	{
-		auto preReader = createModule<In::File>(&NullHost, filename);
+		FileInputConfig fileInputConfig;
+		fileInputConfig.filename = filename;
+		auto preReader = loadModule("FileInput", &NullHost, &fileInputConfig);
 		ConnectOutputToInput(preReader->getOutput(0), decode->getInput(0));
 		preReader->process();
 	}
 
-	auto reader = createModule<In::File>(&NullHost, filename);
+	FileInputConfig fileInputConfig;
+	fileInputConfig.filename = filename;
+	auto reader = loadModule("FileInput", &NullHost, &fileInputConfig);
 	auto encoder = loadModule("JPEGTurboEncode", &NullHost, nullptr);
 	auto writer = createModule<Out::File>(&NullHost, "out/test2.jpg");
 
@@ -117,11 +126,15 @@ void resizeJPGTest(PixelFormat pf) {
 	const std::string filename("data/sample.jpg");
 	auto decode = loadModule("JPEGTurboDecode", &NullHost, nullptr);
 	{
-		auto preReader = createModule<In::File>(&NullHost, filename);
+		FileInputConfig fileInputConfig;
+		fileInputConfig.filename = filename;
+		auto preReader = loadModule("FileInput", &NullHost, &fileInputConfig);
 		ConnectOutputToInput(preReader->getOutput(0), decode->getInput(0));
 		preReader->process();
 	}
-	auto reader = createModule<In::File>(&NullHost, filename);
+	FileInputConfig fileInputConfig;
+	fileInputConfig.filename = filename;
+	auto reader = loadModule("FileInput", &NullHost, &fileInputConfig);
 
 	auto const dstFormat = PictureFormat(Resolution(320, 180) / 2, pf);
 	auto converter = loadModule("VideoConvert", &NullHost, &dstFormat);
@@ -150,7 +163,9 @@ unittest("transcoder: h264/mp4 to jpg") {
 	auto demux = loadModule("LibavDemux", &NullHost, &cfg);
 
 	auto metadata = safe_cast<const MetadataPktVideo>(demux->getOutput(1)->getMetadata());
-	auto decode = loadModule("Decoder", &NullHost, (void*)(uintptr_t)VIDEO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = VIDEO_PKT;
+	auto decode = loadModule("Decoder", &NullHost, &decCfg);
 
 	auto encoder = loadModule("JPEGTurboEncode", &NullHost, nullptr);
 	auto writer = createModule<Out::File>(&NullHost, "out/test3.jpg");
@@ -172,11 +187,15 @@ unittest("transcoder: jpg to h264/mp4 (gpac)") {
 	const std::string filename("data/sample.jpg");
 	auto decode = loadModule("JPEGTurboDecode", &NullHost, nullptr);
 	{
-		auto preReader = createModule<In::File>(&NullHost, filename);
+		FileInputConfig fileInputConfig;
+		fileInputConfig.filename = filename;
+		auto preReader = loadModule("FileInput", &NullHost, &fileInputConfig);
 		ConnectOutputToInput(preReader->getOutput(0), decode->getInput(0));
 		preReader->process();
 	}
-	auto reader = createModule<In::File>(&NullHost, filename);
+	FileInputConfig fileInputConfig;
+	fileInputConfig.filename = filename;
+	auto reader = loadModule("FileInput", &NullHost, &fileInputConfig);
 
 	auto const dstFormat = PictureFormat(Resolution(320, 180), PixelFormat::I420);
 	auto converter = loadModule("VideoConvert", &NullHost, &dstFormat);

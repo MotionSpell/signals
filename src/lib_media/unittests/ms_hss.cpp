@@ -1,11 +1,10 @@
 #include "tests/tests.hpp"
 #include "lib_media/common/metadata_file.hpp"
-#include "lib_media/stream/ms_hss.hpp"
 #include "lib_modules/modules.hpp"
-#include <string.h> // memcpy
+#include "lib_modules/utils/loader.hpp"
+#include <cstring> // memcpy
 
 using namespace Modules;
-using namespace Stream;
 
 namespace {
 
@@ -29,9 +28,9 @@ std::shared_ptr<DataBase> createPacket(span<uint8_t> contents) {
 
 }
 
-
 secondclasstest("MS_HSS: simple") {
-	auto mod = createModule<MS_HSS>(&NullHost, "http://127.0.0.1:9000");
+	std::string url = "http://127.0.0.1:9000";
+	auto mod = loadModule("MS_HSS", &NullHost, &url);
 	uint8_t data[] = {
 		// 'ftyp' box
 		0x00, 0x00, 0x00, 0x0A,
@@ -57,9 +56,9 @@ secondclasstest("MS_HSS: simple") {
 		// actual data
 		0xAA, 0xAA, 0xAA, 0xAA, 0xFF,
 	};
-	mod->processOne(createPacket(data));
-	mod->processOne(createPacket(data));
-	mod->processOne(createPacket(data));
+	mod->getInput(0)->push(createPacket(data));
+	mod->getInput(0)->push(createPacket(data));
+	mod->getInput(0)->push(createPacket(data));
 	//mod->flush();
 }
 

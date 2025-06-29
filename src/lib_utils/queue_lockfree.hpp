@@ -40,7 +40,7 @@ struct QueueLockFree {
 				}
 			}
 
-			delete [] (uint8_t*)records_;
+			delete[] (uint8_t*)records_;
 		}
 
 		template<class ...Args>

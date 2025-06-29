@@ -67,7 +67,7 @@ void vsnprintf(char* buffer, size_t size, const char* fmt, va_list vl) {
 }
 #endif
 
-void avLog(void* /*avcl*/, int level, const char *fmt, va_list vl) {
+void avLog(void* avcl, int level, const char *fmt, va_list vl) {
 	char buffer[1280];
 	vsnprintf(buffer, sizeof(buffer)-1, fmt, vl);
 
@@ -77,7 +77,13 @@ void avLog(void* /*avcl*/, int level, const char *fmt, va_list vl) {
 		if (N > 0 && buffer[N-1] == '\n')
 			buffer[N-1] = 0;
 	}
-	g_Log->log(avLogLevel(level), format("[libav-log::%s] %s", avlogLevelName(level), buffer).c_str());
+
+	AVClass* avc = avcl ? *(AVClass**)avcl : NULL;
+	if (avc) {
+		g_Log->log(avLogLevel(level), format("[libav-log::%s] [%s @ %s] %s", avlogLevelName(level), avc->item_name(avcl), avcl, buffer).c_str());
+	} else {
+		g_Log->log(avLogLevel(level), format("[libav-log::%s] %s", avlogLevelName(level), buffer).c_str());
+	}
 }
 
 int do_ffmpeg_static_initialization() {

@@ -2,7 +2,7 @@
 
 #include <cassert>
 #include <cstdint>
-#include <string.h>
+#include <cstring>
 #include <vector>
 
 template<typename T>

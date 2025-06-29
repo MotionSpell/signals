@@ -37,9 +37,8 @@ class Signal : public ISignal<Arg> {
 
 		void emit(Arg arg) {
 			std::lock_guard<std::mutex> lg(callbacksMutex);
-			for (auto &cb : callbacks) {
-				cb.executor->call(std::bind(cb.callback, arg));
-			}
+			for (auto &cb : callbacks)
+				cb.value.executor->call(std::bind(cb.value.callback, arg));
 		}
 
 		Signal() : defaultExecutor(new ExecutorSync()), executor(*defaultExecutor.get()) {

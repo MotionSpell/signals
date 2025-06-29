@@ -33,61 +33,61 @@ struct LibavEncode : ModuleS {
 			auto const type = params.type;
 			std::string generalOptions;
 			switch (type) {
-			case EncoderConfig::Video: {
-				GOPSize = params.GOPSize;
-				codecOptions += format(" -b %s", params.bitrate);
-				codecName = "vcodec";
-				ffpp::Dict customDict(typeid(*this).name(), params.avcodecCustom);
-				auto const pixFmt = customDict.get("pix_fmt");
+		case EncoderConfig::Video: {
+				    GOPSize = params.GOPSize;
+				    codecOptions += format(" -b %s", params.bitrate);
+				    codecName = "vcodec";
+				    ffpp::Dict customDict(typeid(*this).name(), params.avcodecCustom);
+				    auto const pixFmt = customDict.get("pix_fmt");
 				if (pixFmt) {
-					generalOptions += format(" -pix_fmt %s", pixFmt->value);
+				generalOptions += format(" -pix_fmt %s", pixFmt->value);
 				}
-				auto const codec = customDict.get("vcodec");
-				if (codec) {
-					generalOptions += format(" -vcodec %s", codec->value);
-					av_dict_free(&customDict);
-					break;
-				}
+			auto const codec = customDict.get("vcodec");
+			if (codec) {
+			generalOptions += format(" -vcodec %s", codec->value);
 				av_dict_free(&customDict);
-				codecOptions += " -forced-idr 1";
-				switch (params.codecType) {
-				case VideoCodecType::Software:
-					generalOptions += " -vcodec libx264";
-					if (params.isLowLatency) {
-						codecOptions += " -preset ultrafast -tune zerolatency";
-					} else {
-						codecOptions += " -preset veryfast";
-					}
-					break;
-				case VideoCodecType::Hardware_qsv:
+				break;
+			}
+			av_dict_free(&customDict);
+			codecOptions += " -forced-idr 1";
+			switch (params.codecType) {
+	case VideoCodecType::Software:
+				generalOptions += " -vcodec libx264";
+			if (params.isLowLatency) {
+					codecOptions += " -preset ultrafast -tune zerolatency";
+				} else {
+					codecOptions += " -preset veryfast";
+				}
+				break;
+		case VideoCodecType::Hardware_qsv:
 					generalOptions += " -vcodec h264_qsv";
-					break;
-				case VideoCodecType::Hardware_nvenc:
-					generalOptions += " -vcodec h264_nvenc";
-					break;
-				default:
-					throw error("Unknown video encoder type. Failed.");
-				}
-				codecOptions += " -bf 0";
 				break;
+		case VideoCodecType::Hardware_nvenc:
+					generalOptions += " -vcodec h264_nvenc";
+				break;
+		default:
+					throw error("Unknown video encoder type. Failed.");
 			}
-			case EncoderConfig::Audio: {
-				codecName = "acodec";
-				ffpp::Dict customDict(typeid(*this).name(), params.avcodecCustom);
-				auto const codec = customDict.get("acodec");
+			codecOptions += " -bf 0";
+			    break;
+			}
+		case EncoderConfig::Audio: {
+				    codecName = "acodec";
+				    ffpp::Dict customDict(typeid(*this).name(), params.avcodecCustom);
+				    auto const codec = customDict.get("acodec");
 				if (codec) {
-					generalOptions += format(" -acodec %s", codec->value);
+				generalOptions += format(" -acodec %s", codec->value);
 					av_dict_free(&customDict);
 					break;
 				}
-				av_dict_free(&customDict);
-				codecOptions += format(" -b %s", params.bitrate);
-				generalOptions += " -acodec aac -profile aac_low";
-				GOPSize = 1;
-				break;
+			av_dict_free(&customDict);
+			codecOptions += format(" -b %s", params.bitrate);
+			    generalOptions += " -acodec aac -profile aac_low";
+			    GOPSize = 1;
+			    break;
 			}
-			default:
-				throw error("Unknown encoder type. Failed.");
+		default:
+					throw error("Unknown encoder type. Failed.");
 			}
 
 			/* find the encoder */
@@ -117,36 +117,38 @@ struct LibavEncode : ModuleS {
 
 			// encoder configuration
 			switch (type) {
-			case EncoderConfig::Video: {
+		case EncoderConfig::Video: {
 				if (generalDict.get("pix_fmt")) {
-					codecCtx->pix_fmt = av_get_pix_fmt(generalDict.get("pix_fmt")->value);
+				codecCtx->pix_fmt = av_get_pix_fmt(generalDict.get("pix_fmt")->value);
 					if (codecCtx->pix_fmt == AV_PIX_FMT_NONE)
 						throw error(format("Unknown pixel format\"%s\".", generalDict.get("pix_fmt")->value));
 					av_dict_set(&generalDict, "pix_fmt", nullptr, 0);
 				} else if (!strcmp(generalDict.get("vcodec")->value, "mjpeg")) {
-					codecCtx->pix_fmt = AV_PIX_FMT_YUVJ420P;
-				} else if (!strcmp(generalDict.get("vcodec")->value, "h264_qsv")) {
-					codecCtx->pix_fmt = AV_PIX_FMT_NV12;
-				} else {
-					codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
-				}
-
-				// output
-				pparams->pixelFormat = libavPixFmt2PixelFormat(codecCtx->pix_fmt);
-
-				framePeriod = params.frameRate.inverse();
-
-				prepareFrame = std::bind(&LibavEncode::prepareVideoFrame, this, std::placeholders::_1);
-				input->setMetadata(make_shared<MetadataRawVideo>());
-				break;
+				codecCtx->pix_fmt = AV_PIX_FMT_YUVJ420P;
+			} else if (!strcmp(generalDict.get("vcodec")->value, "h264_qsv")) {
+				codecCtx->pix_fmt = AV_PIX_FMT_NV12;
+			} else {
+				codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
 			}
-			case EncoderConfig::Audio:
+
+		// output
+		pparams->pixelFormat = libavPixFmt2PixelFormat(codecCtx->pix_fmt);
+
+		    framePeriod = params.frameRate.inverse();
+
+		    prepareFrame = std::bind(&LibavEncode::prepareVideoFrame, this, std::placeholders::_1);
+		    input->setMetadata(make_shared<MetadataRawVideo>());
+		    break;
+		}
+	case EncoderConfig::Audio:
 
 				prepareFrame = std::bind(&LibavEncode::prepareAudioFrame, this, std::placeholders::_1);
 				input->setMetadata(make_shared<MetadataRawAudio>());
 				break;
-			default:
-				throw error(format("Invalid codec type: %d", type));
+		default:
+					const char* typeStr = (type == EncoderConfig::Video) ? "Video" :
+					    (type == EncoderConfig::Audio) ? "Audio" : "Unknown";
+				throw error(format("Invalid codec type: %s", typeStr));
 			}
 
 			av_dict_free(&generalDict);
@@ -237,7 +239,7 @@ struct LibavEncode : ModuleS {
 		int64_t computeNearestGOPNum(int64_t timeDiff) const {
 			auto const num = timeDiff * GOPSize.den * framePeriod.den;
 			auto const den = GOPSize.num * framePeriod.num * (int64_t)IClock::Rate;
-			auto const halfStep = (den * framePeriod.num) / (framePeriod.den * 2);
+			auto const halfStep = ((int64_t)IClock::Rate * framePeriod.num) / (framePeriod.den * 2);
 			return (num + halfStep - 1) / den;
 		}
 
@@ -340,7 +342,9 @@ struct LibavEncode : ModuleS {
 				break;
 			}
 			default:
-				throw error(format("Invalid codec type: %d", params.type));
+				const char* typeStr = (params.type == EncoderConfig::Video) ? "Video" :
+				    (params.type == EncoderConfig::Audio) ? "Audio" : "Unknown";
+				throw error(format("Invalid codec type: %s", typeStr));
 			}
 
 			/* open it */

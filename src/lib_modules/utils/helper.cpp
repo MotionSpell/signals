@@ -1,9 +1,8 @@
-#include "helper.hpp"
 #include "helper_dyn.hpp"
 #include "helper_input.hpp"
-#include "log.hpp"
-#include "format.hpp"
-#include "tools.hpp" // safe_cast
+#include "lib_utils/log.hpp"
+#include "lib_utils/format.hpp"
+#include "lib_utils/tools.hpp" // safe_cast
 #include <iostream>
 
 namespace Modules {
@@ -27,7 +26,8 @@ void MetadataCap::setMetadata(Metadata metadata) {
 	}
 
 	if (metadata->type != m_metadata->type)
-		throw std::runtime_error(format("Metadata update: incompatible types %s for data and %s for attached", metadata->type, m_metadata->type));
+		throw std::runtime_error(format("Metadata update: incompatible types %s for data and %s for attached",
+		    (int)metadata->type, (int)m_metadata->type));
 
 	if (*m_metadata == *metadata) {
 		g_Log->log(Debug, "Output: metadata not equal but comparable by value. Updating.");
@@ -107,10 +107,9 @@ void ConnectOutput(IOutput* o, std::function<void(Data)> f) {
 		}
 
 		throw std::runtime_error("Could not cast to any known output type");
-
 	} catch (const std::exception& e) {
-		std::cerr << "ConnectOutput failed: " << e.what() << std::endl;
-		std::cerr << "From type: " << typeid(*o).name() << std::endl;
+		g_Log->log(Error, format("ConnectOutput failed: %s", e.what()).c_str());
+		g_Log->log(Error, format("From type: %s", typeid(*o).name()).c_str());
 		throw;
 	}
 }

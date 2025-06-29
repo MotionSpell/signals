@@ -1,4 +1,5 @@
 #include "apple_hls.hpp"
+#include "lib_media/common/attributes.hpp"
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -125,7 +126,7 @@ void Apple_HLS::generateManifestMaster() {
 			metadata->durationIn180k = timescaleToClock(segDurationInMs, 1000);
 
 			out->setMetadata(metadata);
-			out->setMediaTime(totalDurationInMs, 1000);
+			out->set(PresentationTime { timescaleToClock((int64_t)totalDurationInMs, 1000) });
 			outputManifest->post(out);
 		}
 	}
@@ -156,7 +157,7 @@ void Apple_HLS::updateManifestVariants() {
 			std::istringstream buffer(firstSegNumStr);
 			buffer >> firstSegNums[i];
 
-			auto out = clone(quality->lastData);
+			auto out = quality->lastData->clone();
 			{
 				auto file = make_shared<MetadataFile>(SEGMENT);
 
@@ -171,7 +172,7 @@ void Apple_HLS::updateManifestVariants() {
 
 				out->setMetadata(file);
 			}
-			out->setMediaTime(totalDurationInMs, 1000);
+			out->set(PresentationTime { timescaleToClock((int64_t)totalDurationInMs, 1000) });
 			outputSegments->post(out);
 
 			if (flags & PresignalNextSegment) {
@@ -259,7 +260,7 @@ void Apple_HLS::generateManifestVariantFull(bool isLast) {
 				out->setMetadata(meta);
 			}
 
-			out->setMediaTime(totalDurationInMs, 1000);
+			out->set(PresentationTime { timescaleToClock((int64_t)totalDurationInMs, 1000) });
 			outputManifest->post(out);
 		}
 	}

@@ -71,7 +71,6 @@ if(BUILD_TESTING)
     target_include_directories(lib_signals_unittests PRIVATE
     ${SIGNALS_TOP_SOURCE_DIR}/src/lib_appcommon
     ${SIGNALS_TOP_SOURCE_DIR}/src/tests
-
 )
 
 

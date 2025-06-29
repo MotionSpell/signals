@@ -82,7 +82,7 @@ struct TopLevelBoxSeparator {
 					boxFourcc |= byte;
 				}
 				// reading header
-				headerBytes ++;
+				headerBytes++;
 				assert(headerBytes <= 8);
 				if(headerBytes == 8) {
 					if(boxBytes > 8) {
@@ -96,7 +96,7 @@ struct TopLevelBoxSeparator {
 				}
 			} else {
 				assert(boxBytes > 0);
-				boxBytes --;
+				boxBytes--;
 
 				// is the current box complete?
 				if(boxBytes == 0) {
@@ -188,7 +188,7 @@ struct Fmp4Splitter : ModuleS {
 
 				auto out = output->allocData<DataRaw>(sample.size);
 				memcpy(out->buffer->data().ptr, contents.ptr, sample.size);
-				out->setMediaTime(m_decodeTime + sample.cts, m_timescale);
+				out->set(PresentationTime { timescaleToClock(m_decodeTime + sample.cts, m_timescale) });
 
 				CueFlags flags {};
 				flags.keyframe = true;
@@ -250,7 +250,7 @@ struct Fmp4Splitter : ModuleS {
 		switch(m_codecFourcc) {
 		case FOURCC("mp4a"): {
 			meta = make_shared<MetadataPkt>(AUDIO_PKT);
-			meta->codec = "aac_adts";
+			meta->codec = "aac_raw";
 			break;
 		}
 		case FOURCC("avc1"): {

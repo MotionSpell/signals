@@ -19,27 +19,3 @@ struct HttpOutputConfig {
 
 	Flags flags {};
 };
-
-struct HttpSender;
-
-namespace Modules {
-namespace Out {
-
-class HTTP : public ModuleS {
-	public:
-
-		HTTP(KHost* host, HttpOutputConfig const& cfg);
-		virtual ~HTTP();
-
-		void processOne(Data data) final;
-		void flush() final;
-
-	private:
-		KHost* const m_host;
-		std::unique_ptr<HttpSender> m_sender;
-		std::vector<uint8_t> m_suffixData;
-		OutputDefault* outputFinished;
-};
-
-}
-}

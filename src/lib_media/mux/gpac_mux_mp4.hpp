@@ -2,7 +2,6 @@
 
 #include "mux_mp4_config.hpp"
 #include "lib_media/common/metadata.hpp"
-#include "lib_modules/utils/helper.hpp"
 #include "lib_modules/utils/helper_dyn.hpp"
 
 typedef struct __tag_isom GF_ISOFile;
@@ -29,9 +28,9 @@ class GPACMuxMP4 : public ModuleS {
 		std::string codec4CC;
 		std::string lang;
 		GF_ISOFile *isoInit, *isoCur;
+		KHost * const m_host;
 
 	private:
-		KHost * const m_host;
 		IUtcStartTimeQuery const * const m_utcStartTime;
 
 		void updateFormat(Data data);

@@ -12,7 +12,7 @@ mp42tsXOptions parseCommandLine(int argc, char const* argv[]) {
 
 	auto files = opt.parse(argc, argv);
 	if (files.size() != 1) {
-		std::cout << "Usage: mp42tsx <input.mp4>" << std::endl;
+		std::cerr << "Usage: mp42tsx <input.mp4>" << std::endl;
 		opt.printHelp();
 		throw std::runtime_error("invalid command line");
 	}

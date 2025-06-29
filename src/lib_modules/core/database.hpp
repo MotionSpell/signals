@@ -6,7 +6,6 @@
 #include <vector>
 #include "lib_utils/small_map.hpp"
 #include "lib_utils/clock.hpp"
-#include "lib_utils/tools.hpp"
 
 namespace Modules {
 
@@ -15,8 +14,15 @@ struct IMetadata;
 //A generic timed data container with metadata.
 class DataBase {
 	public:
-		DataBase();
+		DataBase (const DataBase&) = delete;
+		DataBase& operator= (const DataBase&) = delete;
 		virtual ~DataBase() = default;
+
+		static void clone(DataBase const * const src, DataBase * const dst) {
+			dst->buffer = src->buffer;
+			dst->setMetadata(src->getMetadata());
+			dst->copyAttributes(*src);
+		}
 
 		std::shared_ptr<const IMetadata> getMetadata() const;
 		void setMetadata(std::shared_ptr<const IMetadata> metadata);
@@ -47,45 +53,39 @@ class DataBase {
 			return ((const IBuffer*)buffer.get())->data();
 		}
 
+		virtual std::shared_ptr<DataBase> clone() const = 0;
+
+	protected:
+		DataBase() = default;
+
 	private:
 		std::shared_ptr<const IMetadata> metadata;
 		std::vector<uint8_t> attributes;
 		SmallMap<int, int> attributeOffset;
-
-		// TODO: remove this
-	public:
-		// Deprecated: use 'set(PresentationTime{xxx})' instead.
-		void setMediaTime(int64_t timeIn180k, uint64_t timescale = IClock::Rate);
-};
-
-std::shared_ptr<DataBase> clone(std::shared_ptr<const DataBase> data);
-
-class DataBaseRef : public DataBase {
-	public:
-		DataBaseRef(std::shared_ptr<const DataBase> data);
-		std::shared_ptr<const DataBase> getData() const;
-
-	private:
-		std::shared_ptr<const DataBase> dataRef;
 };
 
 class DataRaw : public DataBase {
 	public:
 		DataRaw(size_t size);
+		std::shared_ptr<DataBase> clone() const override;
+};
+
+class DataRawResizable : public DataRaw {
+	public:
+		DataRawResizable(size_t size);
+		void resize(size_t size);
 };
 
 using Data = std::shared_ptr<const DataBase>;
 using Metadata = std::shared_ptr<const IMetadata>;
 
 inline bool isDeclaration(Data data) {
-	auto refData = std::dynamic_pointer_cast<const DataBaseRef>(data);
-	if(refData && !refData->getData())
-		return true;
-
 	return data->buffer == nullptr;
 }
 
 }
+
+[[noreturn]] void throw_dynamic_cast_error(const char* typeName);
 
 template<class T>
 std::shared_ptr<T> safe_cast(std::shared_ptr<const Modules::DataBase> p) {
@@ -94,13 +94,5 @@ std::shared_ptr<T> safe_cast(std::shared_ptr<const Modules::DataBase> p) {
 	if (auto r = std::dynamic_pointer_cast<T>(p))
 		return r;
 
-	if (auto ref = std::dynamic_pointer_cast<const Modules::DataBaseRef>(p)) {
-		if (auto r = std::dynamic_pointer_cast<T>(ref->getData()))
-			return r;
-		if (auto r = std::dynamic_pointer_cast<const Modules::DataBase>(ref->getData()))
-			return safe_cast<T>(r);
-	}
-
-	throw_dynamic_cast_error("Modules::Data", typeid(T).name());
+	throw_dynamic_cast_error(typeid(T).name());
 }
-
