@@ -477,20 +477,20 @@ set(EXE_HTTP_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/out/http.cpp
 )
 list(APPEND EXE_FILESYSTEMSINK_SRCS ${LIB_MODULES_SRCS})
-add_library(Http SHARED ${EXE_HTTP_SRCS})
-target_include_directories(Http 
+add_library(HTTP SHARED ${EXE_HTTP_SRCS})
+target_include_directories(HTTP
     PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR} 
     ${CMAKE_SOURCE_DIR}/src/
 )
-target_link_libraries(Http 
+target_link_libraries(HTTP
     PRIVATE 
     media 
     pipeline 
     appcommon 
     utils
 )
-signals_install_plugin(Http ".smd")
+signals_install_plugin(HTTP ".smd")
 
 # Rectifier target
 set(EXE_RECTIFIER_SRCS
