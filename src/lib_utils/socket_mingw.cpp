@@ -36,7 +36,7 @@ struct Socket : ISocket {
 			dstAddr.sin_addr.s_addr = INADDR_ANY;
 			dstAddr.sin_port = htons(port);
 
-			if(bind(m_socket, (sockaddr*)&dstAddr, sizeof(dstAddr)) == SOCKET_ERROR)
+			if(::bind(m_socket, (sockaddr*)&dstAddr, sizeof(dstAddr)) == SOCKET_ERROR)
 				throw runtime_error("bind failed");
 
 			switch(type) {
