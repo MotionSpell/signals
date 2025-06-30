@@ -1,6 +1,7 @@
 #pragma once
 
 #include "small_map.hpp"
+#include <cstdint> // int64_t
 #include <string>
 #include <vector>
 
