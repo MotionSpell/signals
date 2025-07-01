@@ -87,12 +87,12 @@ struct CurlHttpSender : HttpSender {
 		}
 
 		void send(span<const uint8_t> data) override {
+			if (!curlThread.joinable())
+				curlThread = std::thread(&CurlHttpSender::threadProc, this);
+
 			if (m_cfg.request == DELETEX)
 				// don't try to send anything on DELETE
 				return;
-
-			if (!curlThread.joinable())
-				curlThread = std::thread(&CurlHttpSender::threadProc, this);
 
 			{
 				std::unique_lock<std::mutex> lock(m_mutex);

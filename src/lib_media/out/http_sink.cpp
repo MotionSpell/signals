@@ -54,6 +54,7 @@ struct HttpSink : ModuleS {
 				m_host->log(Info, format("Delete at URL: \"%s\"", url).c_str());
 				httpConfig.flags.request = DELETEX;
 				auto http = loadModule("HTTP", m_host, &httpConfig);
+				http->getInput(0)->push(data);
 			} else if (meta->filesize == 0 && !meta->EOS) {
 				if (exists(zeroSizeConnections, url))
 					throw error(format("Received zero-sized metadata but transfer is already initialized for URL: \"%s\"", url));
@@ -61,7 +62,6 @@ struct HttpSink : ModuleS {
 				m_host->log(Info, format("Initialize transfer for URL: \"%s\"", url).c_str());
 				auto http = loadModule("HTTP", m_host, &httpConfig);
 				http->getInput(0)->push(data);
-				http->process();
 				zeroSizeConnections[url] = std::move(http);
 			} else {
 				if (!exists(zeroSizeConnections, url)) {
