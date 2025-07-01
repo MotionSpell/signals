@@ -7,6 +7,7 @@
 #include "../common/mpeg_dash_parser.hpp"
 #include "mpeg_dash_input.hpp"
 #include <algorithm> // max
+#include <atomic>
 #include <chrono>
 #include <cstring> // memcpy
 #include <map>
@@ -20,45 +21,45 @@ string expandVars(string input, map<string,string> const& values);
 namespace Modules {
 namespace In {
 
-/*binary semaphore blocking post() with a thread executor*/
+/*binary threaded executor: will execute the latest queued request*/
 struct BinaryBlockingExecutor {
 		BinaryBlockingExecutor(exception_ptr eptr)
-			: eptr(eptr), th(&BinaryBlockingExecutor::threadProc, this) {
+			: eptr(eptr), th(&BinaryBlockingExecutor::threadProc, this), fct(nullptr) {
+			done = false;
 		}
 
 		~BinaryBlockingExecutor() {
-			q.clear();           //cancel any unflushed task
-			q.push(nullptr);     //signal end of queue
-			qEmpty.notify_all(); //unlock queue
-			th.join();           //join call: return as soon as current processing is finished
+			fct = nullptr; //cancel unflushed task (if any) and signal end of queue
+			done = true;   //unlock queue
+			th.join();     //return as soon as current processing is finished
 		}
 
-		void post(function<void()> fct) {
-			{
-				unique_lock<mutex> lock(m);
-				while (count <= 0) {
-					if (eptr)
-						rethrow_exception(eptr);
+		void post(function<void()> next) {
+			if (eptr)
+				rethrow_exception(eptr);
 
-					qEmpty.wait_for(lock, chrono::milliseconds(100));
-				}
-				count--;
-			}
-
-			q.push(fct);
+			unique_lock<mutex> lock(m);
+			fct = next;
 		}
 
 	private:
 		void threadProc() {
 			try {
-				while (auto f = q.pop()) {
+				while (!done) {
+					function<void()> next = nullptr;
+
 					{
 						unique_lock<mutex> lock(m);
-						count++;
-						qEmpty.notify_one();
+						if (fct) {
+							next = fct;
+							fct = nullptr;
+						}
 					}
 
-					f();
+					if (next)
+						next();
+					else
+						this_thread::sleep_for(chrono::milliseconds(100));
 				}
 			} catch(...) {
 				eptr = current_exception();
@@ -67,10 +68,9 @@ struct BinaryBlockingExecutor {
 
 		exception_ptr eptr;
 		thread th;
-		mutex m;
-		Queue<function<void()>> q;
-		int count = 1;
-		condition_variable qEmpty;
+		mutex m; //protects @fct
+		function<void()> fct;
+		std::atomic_bool done;
 };
 
 struct MPEG_DASH_Input::Stream {
@@ -262,8 +262,9 @@ void MPEG_DASH_Input::enableStream(int asIdx, int repIdx) {
 		throw error("enableStream(): wrong representation index");
 
 	m_streams[asIdx]->executor->post([this, asIdx, repIdx]() {
-		auto &newRep = m_streams[asIdx]->rep->set(mpd.get()).representations[repIdx];
-		m_streams[asIdx]->currNumber += newRep.startNumber(mpd.get()) - m_streams[asIdx]->rep->startNumber(mpd.get());
+		auto curRep = m_streams[asIdx]->rep;
+		auto &newRep = curRep->set(mpd.get()).representations[repIdx];
+		m_streams[asIdx]->currNumber += newRep.startNumber(mpd.get()) - curRep->startNumber(mpd.get());
 		m_streams[asIdx]->rep = &newRep;
 	});
 }
