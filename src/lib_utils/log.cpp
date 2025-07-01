@@ -106,6 +106,10 @@ void setGlobalLogCSV(const char* path) {
 	g_Log = &csvLogger;
 }
 
+void setGlobalLogger(LogSink &logger) {
+	g_Log = &logger;
+}
+
 static
 LogSink* getDefaultLogger() {
 	if(auto path = std::getenv("SIGNALS_LOGPATH")) {
