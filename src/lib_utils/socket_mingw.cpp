@@ -96,7 +96,8 @@ struct Socket : ISocket {
 			uint32_t socketBufferSize = { 0x60000 };
 			setsockopt(m_socket, SOL_SOCKET, SO_RCVBUF, (char *)&socketBufferSize, (socklen_t)sizeof(socketBufferSize));
 
-			uint32_t nsize=0, psize=(uint32_t)sizeof(socketBufferSize);
+			uint32_t nsize=0;
+			int psize=(uint32_t)sizeof(socketBufferSize);
 			getsockopt(m_socket, SOL_SOCKET, SO_RCVBUF, (char*)&nsize, &psize);
 
 			if (nsize < socketBufferSize)
@@ -130,6 +131,6 @@ struct Socket : ISocket {
 };
 
 std::unique_ptr<ISocket> createSocket(const char* ipAddr, int port, ISocket::Type type) {
-	return make_unique<Socket>(const char* ipAddr, int port, ISocket::Type type);
+	return make_unique<Socket>(ipAddr, port, type);
 }
 
