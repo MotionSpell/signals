@@ -27,9 +27,10 @@ struct BinaryBlockingExecutor {
 		}
 
 		~BinaryBlockingExecutor() {
-			q.push(nullptr);
-			qEmpty.notify_all();
-			th.join();
+			q.clear();           //cancel any unflushed task
+			q.push(nullptr);     //signal end of queue
+			qEmpty.notify_all(); //unlock queue
+			th.join();           //join call: return as soon as current processing is finished
 		}
 
 		void post(function<void()> fct) {
