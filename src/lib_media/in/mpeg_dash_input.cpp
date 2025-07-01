@@ -21,14 +21,14 @@ string expandVars(string input, map<string,string> const& values);
 namespace Modules {
 namespace In {
 
-/*binary threaded executor: will execute the latest queued request*/
-struct BinaryBlockingExecutor {
-		BinaryBlockingExecutor(exception_ptr eptr)
-			: eptr(eptr), th(&BinaryBlockingExecutor::threadProc, this), fct(nullptr) {
+/*binary threaded executor: will execute the latest queued request only*/
+struct BinaryExecutor {
+		BinaryExecutor(exception_ptr eptr)
+			: eptr(eptr), th(&BinaryExecutor::threadProc, this), fct(nullptr) {
 			done = false;
 		}
 
-		~BinaryBlockingExecutor() {
+		~BinaryExecutor() {
 			fct = nullptr; //cancel unflushed task (if any) and signal end of queue
 			done = true;   //unlock queue
 			th.join();     //return as soon as current processing is finished
@@ -78,7 +78,7 @@ struct BinaryBlockingExecutor {
 
 struct MPEG_DASH_Input::Stream {
 	Stream(OutputDefault* out, Representation const * rep, Fraction segmentDuration, unique_ptr<IFilePuller> source, exception_ptr eptr)
-		: out(out), rep(rep), segmentDuration(segmentDuration), source(std::move(source)), executor(new BinaryBlockingExecutor(eptr)) {
+		: out(out), rep(rep), segmentDuration(segmentDuration), source(std::move(source)), executor(new BinaryExecutor(eptr)) {
 	}
 
 	OutputDefault* out;
@@ -87,7 +87,7 @@ struct MPEG_DASH_Input::Stream {
 	int64_t currNumber = 0;
 	Fraction segmentDuration;
 	unique_ptr<IFilePuller> source;
-	unique_ptr<BinaryBlockingExecutor> executor;
+	unique_ptr<BinaryExecutor> executor;
 };
 
 static string dirName(string path) {
