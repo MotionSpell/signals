@@ -34,11 +34,14 @@ struct BinaryBlockingExecutor {
 			th.join();     //return as soon as current processing is finished
 		}
 
-		void post(function<void()> next) {
+		void post(function<void()> next, bool priority = false) {
 			if (eptr)
 				rethrow_exception(eptr);
 
 			unique_lock<mutex> lock(m);
+			if (fct && !priority)
+				return;
+
 			fct = next;
 		}
 
@@ -266,7 +269,7 @@ void MPEG_DASH_Input::enableStream(int asIdx, int repIdx) {
 		auto &newRep = curRep->set(mpd.get()).representations[repIdx];
 		m_streams[asIdx]->currNumber += newRep.startNumber(mpd.get()) - curRep->startNumber(mpd.get());
 		m_streams[asIdx]->rep = &newRep;
-	});
+	}, true);
 }
 
 void MPEG_DASH_Input::disableStream(int asIdx) {
@@ -275,7 +278,7 @@ void MPEG_DASH_Input::disableStream(int asIdx) {
 
 	m_streams[asIdx]->executor->post([this, asIdx]() {
 		m_streams[asIdx]->rep = nullptr;
-	});
+	}, true);
 }
 
 }
