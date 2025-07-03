@@ -129,10 +129,6 @@ void setGlobalLogLevel(Level level) {
 	g_Log->setLevel(level);
 }
 
-void throw_dynamic_cast_error(const char* typeName) {
-	throw std::runtime_error("dynamic cast error: could not convert from Modules::Data to " + std::string(typeName));
-}
-
 Level parseLogLevel(const char* slevel) {
 	auto level = std::string(slevel);
 	if (level == "error") {
