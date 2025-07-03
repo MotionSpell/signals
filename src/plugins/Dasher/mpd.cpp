@@ -3,6 +3,7 @@
 #include "lib_utils/xml.hpp"
 #include <cassert>
 #include <ctime>
+#include <cstdint>
 
 extern const char *g_version;
 
