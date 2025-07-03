@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint> //uint8_t
 #include <memory>
 
 struct IOutputSocket {
