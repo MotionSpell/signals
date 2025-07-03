@@ -69,7 +69,7 @@ elseif(UNIX AND NOT APPLE)
 elseif(WIN32)
     # For Windows, include os_mingw.cpp (if needed for MinGW)
     list(APPEND LIB_UTILS_SRCS os_mingw.cpp)
-    target_link_libraries(utils PRIVATE rapidjson ws2_32)
+    target_link_libraries(utils rapidjson ws2_32)
 endif()
 
 # Specify include directories for the utils target
