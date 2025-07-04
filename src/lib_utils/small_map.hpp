@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <cstddef> // size_t
 
 // A fast-compiling, low LOC, replacement for std::map.
 // Uses linear search for lookup, should be OK for small maps.
@@ -28,8 +29,8 @@ struct SmallMap {
 			idx++;
 		}
 
-		Value& operator*() {
-			return parent->pairs[idx].value;
+		Pair& operator*() {
+			return parent->pairs[idx];
 		}
 	};
 
@@ -38,10 +39,14 @@ struct SmallMap {
 	Value& operator[](Key key) {
 		auto i = find(key);
 		if(i != end())
-			return *i;
+			return (*i).value;
 
 		pairs.push_back({key, {}});
 		return pairs[pairs.size()-1].value;
+	}
+
+	const Value& operator[](Key key) const {
+		return const_cast<SmallMap<Key, Value>*>(this)->operator[](key);
 	}
 
 	Iterator find(Key key) {
@@ -76,5 +81,8 @@ struct SmallMap {
 		pairs.clear();
 	}
 
+	size_t size() const {
+		return pairs.size();
+	}
 };
 

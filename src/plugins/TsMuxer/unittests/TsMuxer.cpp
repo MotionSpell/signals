@@ -148,7 +148,7 @@ unittest("TsMuxer: audio simple: mp3") {
 	for(int i=0; i < 30; ++i) {
 		auto frame = getTestMp3Frame();
 		int64_t pts = i*(IClock::Rate/20);
-		frame->setMediaTime(pts);
+		frame->set(PresentationTime{pts});
 		frame->set<DecodingTime>({pts});
 		mux->getInput(0)->push(frame);
 	}
@@ -177,7 +177,7 @@ unittest("TsMuxer: audio simple: aac") {
 	for(int i=0; i < 30; ++i) {
 		auto frame = getTestAacFrame();
 		int64_t pts = i*(IClock::Rate/20);
-		frame->setMediaTime(pts);
+		frame->set(PresentationTime{pts});
 		frame->set<DecodingTime>({pts});
 		mux->getInput(0)->push(frame);
 	}
@@ -209,14 +209,14 @@ unittest("TsMuxer: audio + video") {
 
 		{
 			auto frame = getTestH264Frame();
-			frame->setMediaTime(pts);
+			frame->set(PresentationTime{pts});
 			frame->set<DecodingTime>({pts});
 			mux->getInput(0)->push(frame);
 		}
 
 		{
 			auto frame = getTestMp3Frame();
-			frame->setMediaTime(pts);
+			frame->set(PresentationTime{pts});
 			frame->set<DecodingTime>({pts});
 			mux->getInput(1)->push(frame);
 		}

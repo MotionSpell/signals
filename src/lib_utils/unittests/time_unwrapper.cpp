@@ -43,6 +43,27 @@ unittest("time_unwrapper: simple rollover") {
 	}));
 }
 
+unittest("time_unwrapper: rollover on second iteration") {
+	auto expected = vector<int64_t>({
+		990,
+		1000,
+		1010,
+		1500,
+		1990,
+		2000,
+		2010,
+	});
+	ASSERT_EQUALS(expected, unwrapSequence({
+		990,
+		0,
+		10,
+		500,
+		990,
+		0,
+		10,
+	}));
+}
+
 unittest("time_unwrapper: non-monotonic passthrough") {
 	auto expected = vector<int64_t>({0, 10, 30, 20, 40});
 	ASSERT_EQUALS(expected, unwrapSequence({0, 10, 30, 20, 40}));

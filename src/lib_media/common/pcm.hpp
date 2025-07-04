@@ -3,7 +3,7 @@
 #include <cstring> // memcpy
 #include <stdexcept>
 #include <vector>
-#include "lib_modules/core/buffer.hpp"
+#include "span.hpp"
 #include "lib_modules/core/database.hpp"
 #include "lib_modules/core/raw_buffer.hpp"
 
@@ -26,7 +26,6 @@ enum AudioStruct {
 };
 
 static const int AUDIO_PCM_PLANES_MAX = 8;
-}
 
 namespace {
 uint8_t getNumChannelsFromLayout(Modules::AudioLayout layout) {
@@ -38,8 +37,6 @@ uint8_t getNumChannelsFromLayout(Modules::AudioLayout layout) {
 	}
 }
 }
-
-namespace Modules {
 
 class PcmFormat {
 	public:
@@ -95,10 +92,14 @@ class PcmFormat {
 };
 
 struct DataPcm : DataBase {
-	DataPcm(size_t size) {
-		if (size > 0)
-			throw std::runtime_error("Forbidden operation. Requested size must be 0. Then call setFormat().");
-		buffer = std::make_shared<RawBuffer>(size);
+	DataPcm(size_t numSamples, const PcmFormat &format) : format(format) {
+		buffer = std::make_shared<RawBuffer>(numSamples * format.getBytesPerSample());
+	}
+
+	std::shared_ptr<DataBase> clone() const override {
+		std::shared_ptr<DataBase> clone = std::make_shared<DataPcm>(0, format);
+		DataBase::clone(this, clone.get());
+		return clone;
 	}
 
 	uint8_t* getPlane(int planeIdx) const {
@@ -111,15 +112,11 @@ struct DataPcm : DataBase {
 		return getSampleCount() * format.getBytesPerSample() / format.numPlanes;
 	}
 
-	void setSampleCount(int sampleCount) {
-		buffer->resize(sampleCount * format.getBytesPerSample());
-	}
-
 	int getSampleCount() const {
 		return buffer->data().len / format.getBytesPerSample();
 	}
 
-	PcmFormat format;
+	const PcmFormat format;
 };
 
 }

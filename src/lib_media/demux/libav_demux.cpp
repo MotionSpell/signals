@@ -24,7 +24,7 @@ extern "C" {
 
 #define AV_PKT_FLAG_RESET_DECODER (1 << 30)
 
-static const int avioCtxBufferSize = 1024 * 1024;
+static const int avioCtxBufferSize = 10 * 1024 * 1024;
 
 using namespace Modules;
 using namespace std::chrono;
@@ -51,8 +51,8 @@ bool startsWith(std::string s, std::string prefix) {
 
 struct LibavDemux : Module {
 	LibavDemux(KHost* host, DemuxConfig const& config)
-		: m_host(host),
-		  loop(config.loop), done(false), packetQueue(PKT_QUEUE_SIZE), m_read(config.func) {
+		: m_host(host), loop(config.loop), done(false), packetQueue(PKT_QUEUE_SIZE), m_read(config.func),
+		  startPTSIn180k(config.preserveInitialData ? std::numeric_limits<int64_t>::max() : std::numeric_limits<int64_t>::min()) {
 		if (!(m_formatCtx = avformat_alloc_context()))
 			throw error("Can't allocate format context");
 
@@ -107,6 +107,8 @@ struct LibavDemux : Module {
 				m_host->log(Info, format("Using input format '%s'", m_formatCtx->iformat->name).c_str());
 			}
 
+			//m_formatCtx->flags |= AVFMT_FLAG_KEEP_SIDE_DATA; //deprecated >= 3.5 https://github.com/FFmpeg/FFmpeg/commit/ca2b779423
+
 			if (config.seekTimeInMs) {
 				if (avformat_seek_file(m_formatCtx, -1, INT64_MIN, rescale(config.seekTimeInMs, 1000, AV_TIME_BASE), INT64_MAX, 0) < 0) {
 					clean();
@@ -123,23 +125,21 @@ struct LibavDemux : Module {
 			}
 			m_streams.resize(m_formatCtx->nb_streams);
 
-			initRestamp();
+			initRestamp(config.preserveInitialData);
 
 			av_dict_free(&dict);
 		}
 
 		for (unsigned i = 0; i<m_formatCtx->nb_streams; i++) {
 			auto const st = m_formatCtx->streams[i];
-			auto const parser = av_parser_init(st->codecpar->codec_id);
 
-			// Create codec context from parameters
 			auto codecCtx = shptr(avcodec_alloc_context3(nullptr));
 			if (avcodec_parameters_to_context(codecCtx.get(), st->codecpar) < 0) {
 				m_host->log(Debug, "Failed to copy codec params to codec context");
 				continue;
 			}
 
-			// Set time base and framerate
+			// Set time base and framerate on codecCtx
 			codecCtx->time_base = st->time_base;
 			if (!codecCtx->framerate.num) {
 				codecCtx->framerate = st->avg_frame_rate;
@@ -148,42 +148,39 @@ struct LibavDemux : Module {
 			// Create metadata based on stream type
 			std::shared_ptr<const IMetadata> m;
 			switch (st->codecpar->codec_type) {
-			case AVMEDIA_TYPE_AUDIO: m = createMetadataPktLibavAudio(codecCtx.get()); break;
-			case AVMEDIA_TYPE_VIDEO: m = createMetadataPktLibavVideo(codecCtx.get()); break;
-			case AVMEDIA_TYPE_SUBTITLE: m = createMetadataPktLibavSubtitle(codecCtx.get()); break;
-			default: break;
+		case AVMEDIA_TYPE_AUDIO:    m = createMetadataPktLibavAudio(codecCtx.get()); break;
+		case AVMEDIA_TYPE_VIDEO:    m = createMetadataPktLibavVideo(codecCtx.get()); break;
+		case AVMEDIA_TYPE_SUBTITLE: m = createMetadataPktLibavSubtitle(codecCtx.get()); break;
+		default: break;
 			}
 
 			// Container-specific codec string assignment
 			{
 				auto meta = safe_cast<MetadataPkt>(const_cast<IMetadata*>(m.get()));
 				auto const container = std::string(m_formatCtx->iformat->name);
-				if(container.substr(0, 4) == "mov,") {
-					switch(st->codecpar->codec_id) {
-					case AV_CODEC_ID_H264: meta->codec = "h264_avcc"; break;
-					case AV_CODEC_ID_HEVC: meta->codec = "hevc_avcc"; break;
-					case AV_CODEC_ID_AAC: meta->codec = "aac_raw"; break;
-					default: break;
+				if (container.substr(0, 4) == "mov,") {
+					switch (st->codecpar->codec_id) {
+				case AV_CODEC_ID_MPEG2VIDEO: meta->codec = "mpeg2video"; break;
+				case AV_CODEC_ID_H264: meta->codec = "h264_avcc"; break;
+				case AV_CODEC_ID_HEVC: meta->codec = "hevc_avcc"; break;
+				case AV_CODEC_ID_AAC: meta->codec = "aac_raw"; break;
+				default: break;
 					}
-				} else if(container == "mpegts") {
-					switch(st->codecpar->codec_id) {
-					case AV_CODEC_ID_H264: meta->codec = "h264_annexb"; break;
-					case AV_CODEC_ID_HEVC: meta->codec = "hevc_annexb"; break;
-					case AV_CODEC_ID_AAC: meta->codec = "aac_adts"; break;
-					case AV_CODEC_ID_AAC_LATM: meta->codec = "aac_latm"; break;
-					default: break;
+				} else if (container == "mpegts") {
+					switch (st->codecpar->codec_id) {
+				case AV_CODEC_ID_MPEG2VIDEO: meta->codec = "mpeg2video"; break;
+				case AV_CODEC_ID_H264: meta->codec = "h264_annexb"; break;
+				case AV_CODEC_ID_HEVC: meta->codec = "hevc_annexb"; break;
+				case AV_CODEC_ID_AAC: meta->codec = "aac_adts"; break;
+				case AV_CODEC_ID_AAC_LATM: meta->codec = "aac_latm"; break;
+				default: break;
 					}
 				}
 			}
 
-			// Set output and metadata
 			m_streams[i].output = addOutput();
 			m_streams[i].output->setMetadata(m);
 			av_dump_format(m_formatCtx, i, url.c_str(), 0);
-
-			if (parser) {
-				av_parser_close(parser);
-			}
 		}
 	}
 
@@ -228,7 +225,8 @@ struct LibavDemux : Module {
 	void declareStreams() {
 		for(auto& stream : m_streams) {
 			auto output = stream.output;
-			auto data = make_shared<DataBase>();
+			auto data = make_shared<DataRaw>(0);
+			data->set(CueFlags {});
 			data->setMetadata(output->getMetadata());
 			output->post(data);
 		}
@@ -286,7 +284,7 @@ struct LibavDemux : Module {
 		return true;
 	}
 
-	void initRestamp() {
+	void initRestamp(bool keepAllPackets) {
 		for (unsigned i = 0; i < m_formatCtx->nb_streams; i++) {
 			const std::string format(m_formatCtx->iformat->name);
 			const std::string url = m_formatCtx->url;
@@ -299,7 +297,11 @@ struct LibavDemux : Module {
 
 			if (format == "rtsp" || format == "rtp" || format == "mpegts" || format == "rtmp" || format == "flv") { //TODO: evaluate why this is not the default behaviour
 				auto stream = m_formatCtx->streams[i];
-				startPTSIn180k = std::max<int64_t>(startPTSIn180k, timescaleToClock(stream->start_time*stream->time_base.num, stream->time_base.den));
+				if (keepAllPackets) {
+					startPTSIn180k = std::min<int64_t>(startPTSIn180k, timescaleToClock(stream->start_time * stream->time_base.num, stream->time_base.den));
+				} else {
+					startPTSIn180k = std::max<int64_t>(startPTSIn180k, timescaleToClock(stream->start_time * stream->time_base.num, stream->time_base.den));
+				}
 			} else {
 				startPTSIn180k = 0;
 			}
@@ -317,17 +319,17 @@ struct LibavDemux : Module {
 
 	bool rectifyTimestamps(AVPacket &pkt) {
 		auto const stream = m_formatCtx->streams[pkt.stream_index];
-		auto & demuxStream = m_streams[pkt.stream_index];
+		auto &demuxStream = m_streams[pkt.stream_index];
 		auto const maxDelayInSec = 5;
 		auto const thresholdInBase = (maxDelayInSec * stream->time_base.den) / stream->time_base.num;
 
 		if (pkt.dts != AV_NOPTS_VALUE) {
 			pkt.dts += clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den);
-			if (demuxStream.lastDTS && pkt.dts < demuxStream.lastDTS
+			if (demuxStream.lastDTS != AV_NOPTS_VALUE && pkt.dts < demuxStream.lastDTS
 			    && (1LL << stream->pts_wrap_bits) - demuxStream.lastDTS < thresholdInBase && pkt.dts + (1LL << stream->pts_wrap_bits) > demuxStream.lastDTS) {
 				demuxStream.offsetIn180k += timescaleToClock((1LL << stream->pts_wrap_bits) * stream->time_base.num, stream->time_base.den);
 				m_host->log(Warning, format("Stream %s: overflow detecting on DTS (%s, last=%s, timescale=%s/%s, offset=%s).",
-				        pkt.stream_index, pkt.dts, demuxStream.lastDTS, stream->time_base.num, stream->time_base.den, clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den)).c_str());
+				    pkt.stream_index, pkt.dts, demuxStream.lastDTS, stream->time_base.num, stream->time_base.den, clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den)).c_str());
 			}
 		}
 
@@ -336,13 +338,13 @@ struct LibavDemux : Module {
 			if (pkt.pts < pkt.dts && (1LL << stream->pts_wrap_bits) + pkt.pts - pkt.dts < thresholdInBase) {
 				auto const localOffsetIn180k = timescaleToClock((1LL << stream->pts_wrap_bits) * stream->time_base.num, stream->time_base.den);
 				m_host->log(Warning, format("Stream %s: overflow detecting on PTS (%s, new=%s, timescale=%s/%s, offset=%s).",
-				        pkt.stream_index, pkt.pts, pkt.pts + localOffsetIn180k, stream->time_base.num, stream->time_base.den, clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den)).c_str());
+				    pkt.stream_index, pkt.pts, pkt.pts + localOffsetIn180k, stream->time_base.num, stream->time_base.den, clockToTimescale(demuxStream.offsetIn180k * stream->time_base.num, stream->time_base.den)).c_str());
 				pkt.pts += localOffsetIn180k;
 			}
 		}
 
 		/*dts repetition*/
-		if (pkt.dts == m_streams[pkt.stream_index].lastDTS) {
+		if (pkt.dts != AV_NOPTS_VALUE && pkt.dts == m_streams[pkt.stream_index].lastDTS) {
 			m_streams[pkt.stream_index].lastDTS = pkt.dts = m_streams[pkt.stream_index].lastDTS + 1;
 		}
 
@@ -350,7 +352,7 @@ struct LibavDemux : Module {
 		if (pkt.pts != AV_NOPTS_VALUE) {
 			if (pkt.dts != AV_NOPTS_VALUE) {
 				if (pkt.pts < pkt.dts) {
-					m_host->log(Error, format("Stream %s: pts < dts (%s < %s)", pkt.stream_index, pkt.pts, pkt.dts).c_str());
+					m_host->log(Warning, format("Stream %s: pts < dts (%s < %s)", pkt.stream_index, pkt.pts, pkt.dts).c_str());
 					return false;
 				}
 			}
@@ -369,7 +371,7 @@ struct LibavDemux : Module {
 
 	void inputThread() {
 		if(highPriority && !setHighThreadPriority())
-			m_host->log(Warning, format("Couldn't change reception thread priority to realtime.").c_str());
+			m_host->log(Warning, "Couldn't change reception thread priority to realtime.");
 
 		bool nextPacketResetFlag = false;
 		while (!done) {
@@ -425,11 +427,11 @@ struct LibavDemux : Module {
 		m_streams[pkt->stream_index].lastDTS = pkt->dts;
 		auto const base = m_formatCtx->streams[pkt->stream_index]->time_base;
 		auto const time = timescaleToClock(pkt->pts * base.num, base.den);
-		data->setMediaTime(time - startPTSIn180k);
+		data->set(PresentationTime{time - startPTSIn180k});
 		auto const decodingTime = timescaleToClock(pkt->dts * base.num, base.den);
 		data->set(DecodingTime { decodingTime - startPTSIn180k });
 		if (!startPTSIn180k) {
-			data->setMediaTime(m_streams[pkt->stream_index].restamper->restamp(data->get<PresentationTime>().time)); //restamp by pid only when no start time
+			data->set(PresentationTime{m_streams[pkt->stream_index].restamper->restamp(data->get<PresentationTime>().time)}); //restamp by pid only when no start time
 		}
 	}
 
@@ -441,7 +443,7 @@ struct LibavDemux : Module {
 			pkt->dts = m_streams[pkt->stream_index].lastDTS;
 			m_host->log(Debug, format("No DTS: setting last value %s.", pkt->dts).c_str());
 		}
-		if (!m_streams[pkt->stream_index].lastDTS) {
+		if (m_streams[pkt->stream_index].lastDTS == AV_NOPTS_VALUE) {
 			auto stream = m_formatCtx->streams[pkt->stream_index];
 			auto minPts = clockToTimescale(startPTSIn180k*stream->time_base.num, stream->time_base.den);
 			if(pkt->pts < minPts) {
@@ -475,7 +477,7 @@ struct LibavDemux : Module {
 		// (should be the PCR but libavformat doesn't give access to it)
 		if (m_formatCtx->streams[pkt->stream_index]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
 			auto const base = m_formatCtx->streams[pkt->stream_index]->time_base;
-			auto const time = timescaleToClock(pkt->dts * base.num, base.den);
+			auto const time = timescaleToClock(pkt->dts * base.num, base.den) - startPTSIn180k;
 			if (time > curDTS) {
 				curDTS = time;
 			}
@@ -489,7 +491,8 @@ struct LibavDemux : Module {
 				auto const st = m_formatCtx->streams[i];
 				if (st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
 					auto sparse = m_streams[i].output->allocData<DataRaw>(0);
-					sparse->setMediaTime(curTimeIn180k);
+					sparse->set(DecodingTime{ curTimeIn180k });
+					sparse->set(PresentationTime{curTimeIn180k});
 					m_streams[i].output->post(sparse);
 				}
 			}
@@ -499,7 +502,7 @@ struct LibavDemux : Module {
 	struct Stream {
 		OutputDefault* output = nullptr;
 		uint64_t offsetIn180k = 0;
-		int64_t lastDTS = std::numeric_limits<int64_t>::min();
+		int64_t lastDTS = AV_NOPTS_VALUE;
 		std::unique_ptr<Transform::Restamp> restamper;
 	};
 
@@ -516,7 +519,7 @@ struct LibavDemux : Module {
 	AVFormatContext* m_formatCtx;
 	AVIOContext* m_avioCtx = nullptr;
 	const DemuxConfig::ReadFunc m_read;
-	int64_t curTimeIn180k = 0, startPTSIn180k = std::numeric_limits<int64_t>::min();
+	int64_t curTimeIn180k = 0, startPTSIn180k;
 
 	static int read(void* user, uint8_t* data, int size) {
 		auto pThis = (LibavDemux*)user;

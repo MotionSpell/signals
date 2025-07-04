@@ -196,10 +196,10 @@ struct SDLVideo : ModuleS {
 	std::thread workingThread;
 };
 
-Modules::IModule* createObject(KHost* host, void* va) {
+IModule* createObject(KHost* host, void* va) {
 	auto clock = (IClock*)va;
 	enforce(host, "SDLVideo: host can't be NULL");
-	return Modules::createModule<SDLVideo>(host, clock).release();
+	return createModule<SDLVideo>(host, clock).release();
 }
 
 auto const registered = Factory::registerModule("SDLVideo", &createObject);

@@ -17,7 +17,6 @@ std::unique_ptr<T> uptr(T *p) {
 	throw std::runtime_error("dynamic cast error: could not convert from " + std::string(typeNameFrom) + " to " + std::string(typeNameTo));
 }
 
-
 template<class T, class U>
 std::shared_ptr<T> safe_cast(std::shared_ptr<U> p) {
 	if (!p)

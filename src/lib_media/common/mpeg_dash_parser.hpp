@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib_modules/core/buffer.hpp" // Span
+#include "span.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -43,7 +43,6 @@ struct DashMpd {
 	bool dynamic = false;
 	int64_t availabilityStartTime = 0; // in ms
 	int64_t publishTime = 0; // in ms
-	int64_t mediaPresentationDuration = 0; // in seconds (unfortunately)
 	int64_t periodDuration = 0; // in seconds
 	int64_t minUpdatePeriod = 0;
 	std::vector<AdaptationSet> sets;

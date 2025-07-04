@@ -18,11 +18,8 @@ using namespace std;
 
 auto const VIDEO_RESOLUTION = Resolution(320, 180);
 
-static
-auto createYuvPic(Resolution res) {
-	auto r = make_shared<DataPicture>(0);
-	DataPicture::setup(r.get(), res, res, PixelFormat::I420);
-	return r;
+static auto createYuvPic(Resolution res) {
+	return make_shared<DataPicture>(res, PixelFormat::I420);
 }
 
 unittest("encoder: video simple") {
@@ -37,7 +34,7 @@ unittest("encoder: video simple") {
 	auto encode = loadModule("Encoder", &NullHost, &cfg);
 	ConnectOutput(encode->getOutput(0), onFrame);
 	for (int i = 0; i < 37; ++i) {
-		picture->setMediaTime(i); // avoid warning about non-monotonic pts
+		picture->set(PresentationTime{timescaleToClock(i, 25)}); // avoid warning about non-monotonic pts
 		encode->getInput(0)->push(picture);
 		encode->process();
 	}
@@ -51,11 +48,9 @@ shared_ptr<DataBase> createPcm(int samples) {
 	PcmFormat fmt;
 	fmt.sampleRate = 44100;
 	const auto inFrameSizeInBytes = (size_t)(samples * fmt.getBytesPerSample() / fmt.numPlanes);
-	auto pcm = make_shared<DataPcm>(0);
-	pcm->format = fmt;
+	auto pcm = make_shared<DataPcm>(samples, fmt);
 	std::vector<uint8_t> input(inFrameSizeInBytes);
 	auto inputRaw = input.data();
-	pcm->setSampleCount(samples);
 	for (int i = 0; i < fmt.numPlanes; ++i)
 		memcpy(pcm->getPlane(i), inputRaw, inFrameSizeInBytes);
 	return pcm;
@@ -76,7 +71,7 @@ unittest("encoder: audio timestamp passthrough (modulo priming)") {
 
 	for(auto time : inputTimes) {
 		auto pcm = createPcm(1024);
-		pcm->setMediaTime(time);
+		pcm->set(PresentationTime{time});
 		encode->getInput(0)->push(pcm);
 		encode->process();
 	}
@@ -95,12 +90,14 @@ unittest("encoder: video timestamp passthrough") {
 
 	vector<int64_t> inputTimes = {0, 1, 2, 3, 4, 20, 21, 22, 10, 11, 12};
 
-	EncoderConfig cfg { EncoderConfig::Video };
+	EncoderConfig cfg;
+	cfg.type = EncoderConfig::Video;
+	cfg.frameRate = Fraction(IClock::Rate);
 	auto encode = loadModule("Encoder", &NullHost, &cfg);
 	ConnectOutput(encode->getOutput(0), onFrame);
 	for(auto time : inputTimes) {
 		auto picture = createYuvPic(VIDEO_RESOLUTION);
-		picture->setMediaTime(time);
+		picture->set(PresentationTime{time});
 		encode->getInput(0)->push(picture);
 		encode->process();
 	}
@@ -110,10 +107,10 @@ unittest("encoder: video timestamp passthrough") {
 	ASSERT_EQUALS(expected, times);
 }
 
-void RAPTest(const Fraction fps, const vector<uint64_t> &times, const vector<bool> &RAPs) {
+void RAPTest(const Fraction fps, const Fraction gopSize, const vector<uint64_t> &times, const vector<bool> &RAPs) {
 	EncoderConfig p { EncoderConfig::Video };
 	p.frameRate = fps;
-	p.GOPSize = fps;
+	p.GOPSize = gopSize;
 	auto picture = createYuvPic(VIDEO_RESOLUTION);
 	auto encode = loadModule("Encoder", &NullHost, &p);
 	size_t i = 0;
@@ -126,7 +123,7 @@ void RAPTest(const Fraction fps, const vector<uint64_t> &times, const vector<boo
 	};
 	ConnectOutput(encode->getOutput(0), onFrame);
 	for (size_t i = 0; i < times.size(); ++i) {
-		picture->setMediaTime(times[i]);
+		picture->set(PresentationTime{(int64_t)times[i]});
 		encode->getInput(0)->push(picture);
 		encode->process();
 	}
@@ -137,25 +134,44 @@ void RAPTest(const Fraction fps, const vector<uint64_t> &times, const vector<boo
 unittest("encoder: RAP placement (25/1 fps)") {
 	const vector<uint64_t> times = { 0, IClock::Rate / 2, IClock::Rate, IClock::Rate * 3 / 2, IClock::Rate * 2 };
 	const vector<bool> RAPs = { true, false, true, false, true };
-	RAPTest(Fraction(25, 1), times, RAPs);
+	auto const fps = Fraction(25, 1);
+	RAPTest(fps, fps, times, RAPs);
 }
 
 unittest("encoder: RAP placement (30000/1001 fps)") {
 	const vector<uint64_t> times = { 0, IClock::Rate/2, IClock::Rate, IClock::Rate*3/2, IClock::Rate*2 };
 	const vector<bool> RAPs = { true, false, true, false, true };
-	RAPTest(Fraction(30000, 1001), times, RAPs);
+	auto const fps = Fraction(30000, 1001);
+	RAPTest(fps, fps, times, RAPs);
+}
+
+unittest("encoder: RAP placement (25/1 fps, 3.84s GOP)") {
+	auto const fps = Fraction(25, 1);
+	auto const gop = Fraction(3840, 1000) * fps;
+	vector<uint64_t> times;
+	vector<bool> RAPs;
+	Fraction t(0);
+	while (t <= gop/fps) {
+		times.push_back(fractionToClock(t));
+		if (t == 0 || t == gop/fps) RAPs.push_back(true);
+		else RAPs.push_back(false);
+		t = t + fps.inverse();
+	}
+	RAPTest(fps, gop, times, RAPs);
 }
 
 unittest("encoder: RAP placement (noisy)") {
 	const auto &ms = std::bind(timescaleToClock<uint64_t>, std::placeholders::_1, 1000);
 	const vector<uint64_t> times = { 0, ms(330), ms(660), ms(990), ms(1330), ms(1660) };
 	const vector<bool> RAPs = { true, false, false, true, false, false };
-	RAPTest(Fraction(3, 1), times, RAPs);
+	auto const fps = Fraction(3, 1);
+	RAPTest(fps, fps, times, RAPs);
 }
 
 unittest("encoder: RAP placement (incorrect timings)") {
 	const vector<uint64_t> times = { 0, 0, IClock::Rate };
 	const vector<bool> RAPs = { true, false, true };
-	RAPTest(Fraction(25, 1), times, RAPs);
+	auto const fps = Fraction(25, 1);
+	RAPTest(fps, fps, times, RAPs);
 }
 

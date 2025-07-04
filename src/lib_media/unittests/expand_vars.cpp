@@ -61,6 +61,10 @@ unittest("iso8601 parser: half an hour and one second") {
 	ASSERT_EQUALS(1801, parseIso8601Period("PT0.5HM1S"));
 }
 
+unittest("iso8601 parser: year only") {
+	ASSERT_EQUALS(365*100*24*3600LL, parseIso8601Period("P100Y"));
+}
+
 unittest("iso8601 parser: all") {
 	ASSERT_EQUALS(48551, parseIso8601Period("PT13H29M11S"));
 }

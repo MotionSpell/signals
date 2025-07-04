@@ -7,8 +7,7 @@
 namespace Modules {
 namespace Utils {
 
-Recorder::Recorder(KHost* host)
-	: m_host(host) {
+Recorder::Recorder(KHost* /*host*/) {
 }
 
 void Recorder::flush() {
@@ -16,14 +15,15 @@ void Recorder::flush() {
 }
 
 void Recorder::processOne(Data data) {
-	if (data) {
-		m_host->log(Debug, format("Data[%s] recorded at media time %s", data.get(), data->get<PresentationTime>().time).c_str());
-	}
 	record.push(data);
 }
 
 Data Recorder::pop() {
 	return record.pop();
+}
+
+bool Recorder::tryPop(Data &data) {
+	return record.tryPop(data);
 }
 
 }

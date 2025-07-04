@@ -10,15 +10,16 @@
 #include "lib_media/common/metadata.hpp"
 #include "lib_media/common/pcm.hpp"
 #include "lib_media/common/picture.hpp"
+#include "lib_media/decode/decoder.hpp"
 #include "lib_media/demux/libav_demux.hpp"
 #include "lib_media/encode/libav_encode.hpp"
 #include "lib_media/mux/mux_mp4_config.hpp"
-#include "lib_media/utils/regulator.hpp"
 #include "lib_media/stream/adaptive_streaming_common.hpp" // AdaptiveStreamingCommon::getCommonPrefixAudio
 #include "lib_media/out/filesystem.hpp"
 #include "lib_media/out/http_sink.hpp"
 #include "lib_media/transform/audio_convert.hpp"
 #include "lib_media/transform/logo_overlay.hpp"
+#include "plugins/RegulatorMono/regulator_mono.hpp"
 #include "plugins/Dasher/mpeg_dash.hpp"
 
 using namespace Modules;
@@ -132,7 +133,7 @@ void ensureDir(std::string path) {
 
 namespace {
 struct Logger : LogSink {
-	void log(Level level, const char* msg) override {
+	void send(Level level, const char* msg) override {
 		g_Log->log(level, format("[%s] %s", g_appName, msg).c_str());
 	}
 };
@@ -143,7 +144,9 @@ OutputPin insertLogo(Pipeline* pipeline, OutputPin main, std::string path) {
 	DemuxConfig demuxCfg {};
 	demuxCfg.url = path;
 	auto demux = pipeline->add("LibavDemux", &demuxCfg);
-	auto decoder = pipeline->add("Decoder", (void*)(uintptr_t)VIDEO_PKT);
+	DecoderConfig decCfg;
+	decCfg.type = VIDEO_PKT;
+	auto decoder = pipeline->add("Decoder", &decCfg);
 	pipeline->connect(demux, decoder);
 
 	LogoOverlayConfig logoCfg {};
@@ -198,7 +201,9 @@ std::unique_ptr<Pipeline> buildPipeline(const Config &cfg) {
 	bool isVertical = false;
 
 	auto decode = [&](OutputPin source, Metadata metadata) -> OutputPin {
-		auto decoder = pipeline->add("Decoder", (void*)(uintptr_t)metadata->type);
+		DecoderConfig decCfg;
+		decCfg.type = metadata->type;
+		auto decoder = pipeline->add("Decoder", &decCfg);
 		pipeline->connect(source, decoder);
 
 		if (metadata->isVideo() && cfg.autoRotate) {
@@ -211,7 +216,8 @@ std::unique_ptr<Pipeline> buildPipeline(const Config &cfg) {
 	};
 
 	auto regulate = [&](OutputPin source) -> OutputPin {
-		auto regulator = pipeline->addNamedModule<Regulator>("Regulator", g_SystemClock);
+		RegulatorMonoConfig rmCfg;
+		auto regulator = pipeline->add("RegulatorMono", &rmCfg);
 		pipeline->connect(source, regulator);
 		return GetOutputPin(regulator);
 	};
@@ -221,7 +227,7 @@ std::unique_ptr<Pipeline> buildPipeline(const Config &cfg) {
 		mp4config.segmentDurationInMs =  cfg.segmentDurationInMs;
 		mp4config.segmentPolicy = FragmentedSegment;
 		mp4config.fragmentPolicy = cfg.ultraLowLatency ? OneFragmentPerFrame : OneFragmentPerSegment;
-		mp4config.compatFlags = Browsers;
+		mp4config.compatFlags = FlushFragMemory | ExactInputDur | Browsers;
 		mp4config.utcStartTime = &utcStartTime;
 
 		auto muxer = pipeline->add("GPACMuxMP4", &mp4config);

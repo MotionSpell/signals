@@ -1,6 +1,6 @@
 #include "http_sender.hpp"
 #include <algorithm> // std::min
-#include <string.h> // memcpy
+#include <cstring> // memcpy
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -42,7 +42,7 @@ std::shared_ptr<CURL> createCurl(std::string url, HttpRequest request) {
 	else
 		throw std::runtime_error("Unknown HTTP request.");
 
-	// don't check certifcates
+	// don't check certificates
 	curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl.get(), CURLOPT_SSL_VERIFYHOST, 0L);
 
@@ -50,6 +50,9 @@ std::shared_ptr<CURL> createCurl(std::string url, HttpRequest request) {
 	curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, writeVoid);
 	curl_easy_setopt(curl.get(), CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(curl.get(), CURLOPT_VERBOSE, 0L);
+
+	// timeout after 2s (instead of the default 300s)
+	curl_easy_setopt(curl.get(), CURLOPT_CONNECTTIMEOUT_MS, 2000);
 
 	return curl;
 }
@@ -61,25 +64,32 @@ void append(std::vector<uint8_t>& dst, SpanC data) {
 		memcpy(&dst[offset], data.ptr, data.len);
 }
 
-struct CurlHttpSender : HttpSender {
+void prepend(std::vector<uint8_t>& dst, SpanC data) {
+	auto offset = dst.size();
+	dst.resize(offset + data.len);
+	if (data.len) {
+		memmove(&dst[data.len], &dst[0], offset);
+		memcpy(&dst[0], data.ptr, data.len);
+	}
+}
 
-		HttpSenderConfig const m_cfg;
+struct CurlHttpSender : HttpSender {
 		CurlHttpSender(HttpSenderConfig const& cfg, Modules::KHost* log) : m_cfg(cfg) {
 			m_log = log;
-			curlThread = std::thread(&CurlHttpSender::threadProc, this);
 		}
 
 		~CurlHttpSender() {
-			{
-				std::unique_lock<std::mutex> lock(m_mutex);
-				destroying = true;
-				endOfDataFlag = true;
-				m_dataReady.notify_one();
-			}
-			curlThread.join();
+			destroying = true;
+			m_allDataSent.notify_one();
+			m_dataReady.notify_one();
+			if (curlThread.joinable())
+				curlThread.join();
 		}
 
 		void send(span<const uint8_t> data) override {
+			if (!curlThread.joinable())
+				curlThread = std::thread(&CurlHttpSender::threadProc, this);
+
 			if (m_cfg.request == DELETEX)
 				// don't try to send anything on DELETE
 				return;
@@ -100,13 +110,15 @@ struct CurlHttpSender : HttpSender {
 
 				// wait for flush finished, before returning
 				std::unique_lock<std::mutex> lock(m_mutex);
-				while(!allDataSent && !connectFailCountExceeded)
-					m_allDataSent.wait(lock);
+				auto pred = [this]() {
+					return allDataSent || destroying || connectFailCountExceeded;
+				};
+				while (!pred())
+					m_allDataSent.wait(lock, pred);
 			}
 		}
 
-		void setPrefix(span<const uint8_t>  prefix) override {
-			m_prefixData.clear();
+		void appendPrefix(span<const uint8_t> prefix) override {
 			append(m_prefixData, prefix);
 		}
 
@@ -150,8 +162,10 @@ struct CurlHttpSender : HttpSender {
 
 			while(!destroying && !allDataSent) {
 				// load prefix, if any
-				if(m_prefixData.size())
-					append(m_fifo, {m_prefixData.data(), m_prefixData.size()});
+				if(m_prefixData.size()) {
+					std::unique_lock<std::mutex> lock(m_mutex);
+					prepend(m_fifo, {m_prefixData.data(), m_prefixData.size()});
+				}
 
 				perform(curl.get());
 				if (m_cfg.maxConnectFailCount > 0 && connectFailCount >= m_cfg.maxConnectFailCount) {
@@ -167,6 +181,10 @@ struct CurlHttpSender : HttpSender {
 
 		static size_t staticCurlCallback(void *buffer, size_t size, size_t nmemb, void *userp) {
 			auto pThis = (CurlHttpSender*)userp;
+
+			if (pThis->destroying)
+				return 0;
+
 			return pThis->fillBuffer(span<uint8_t>((uint8_t*)buffer, size * nmemb));
 		}
 
@@ -175,16 +193,12 @@ struct CurlHttpSender : HttpSender {
 
 			std::unique_lock<std::mutex> lock(m_mutex);
 
-			// if we're destroying, early-finish the transfer
-			if(destroying)
-				return 0;
-
 			// wait for new data
-			while(m_fifo.empty() && !endOfDataFlag && !destroying) {
-				m_dataReady.wait(lock);
-			}
-			if(destroying)
-				return 0;
+			auto pred = [this]() {
+				return !m_fifo.empty() || endOfDataFlag || destroying;
+			};
+			while (!pred())
+				m_dataReady.wait(lock, pred);
 
 			auto const N = std::min<int>(buffer.len, m_fifo.size());
 			if(N > 0) {
@@ -200,6 +214,8 @@ struct CurlHttpSender : HttpSender {
 
 			return N;
 		}
+
+		HttpSenderConfig const m_cfg;
 
 		CurlScope m_curlScope;
 		bool destroying = false;
@@ -242,4 +258,3 @@ void enforceConnection(std::string url, HttpRequest request) {
 	if (res != CURLE_OK)
 		throw std::runtime_error("Can't connect to '" + url + "'");
 }
-

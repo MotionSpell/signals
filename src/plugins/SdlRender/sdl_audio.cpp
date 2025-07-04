@@ -25,6 +25,7 @@ static const int64_t TOLERANCE = IClock::Rate / 20;
 
 using namespace Modules;
 using namespace Modules::Render;
+using namespace std::chrono;
 
 namespace {
 
@@ -83,7 +84,7 @@ struct SDLAudio : ModuleS {
 
 		SDL_AudioSpec realSpec;
 		SDL_AudioSpec audioSpec = toSdlAudioSpec(inputFormat);
-		audioSpec.samples = 1024;  /* Good low-latency value for callback */
+		audioSpec.samples = 1024; /* Good low-latency value for callback */
 		audioSpec.callback = &SDLAudio::staticFillAudio;
 		audioSpec.userdata = this;
 
@@ -117,7 +118,7 @@ struct SDLAudio : ModuleS {
 				if(m_fifo.bytesToRead() == 0)
 					break;
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			std::this_thread::sleep_for(10ms);
 		}
 	}
 
@@ -146,12 +147,15 @@ struct SDLAudio : ModuleS {
 		auto const relativeSamplePosition = relativeTimePositionIn180k * m_outputFormat.sampleRate / int64_t(IClock::Rate);
 
 		if (relativeTimePositionIn180k < -TOLERANCE) {
-			auto const numSamplesToDrop = std::min<int64_t>(fifoSamplesToRead(), -relativeSamplePosition);
-			m_host->log(Warning, format("must drop fifo data (%s ms)", numSamplesToDrop * 1000.0f / m_outputFormat.sampleRate).c_str());
+			auto const fifoSamplesToRemove = std::max<int64_t>(0, fifoSamplesToRead() - numSamplesToProduce);
+			auto const numSamplesToDrop = std::min<int64_t>(fifoSamplesToRemove, -relativeSamplePosition);
+			m_host->log(Warning, format("must drop fifo data (%sms) (delta=%ss)", numSamplesToDrop * 1000.0f / m_outputFormat.sampleRate,
+			    (double)relativeTimePositionIn180k / IClock::Rate).c_str());
 			fifoConsumeSamples((size_t)numSamplesToDrop);
 		} else if (relativeTimePositionIn180k > TOLERANCE) {
 			auto const numSilenceSamples = std::min<int64_t>(numSamplesToProduce, relativeSamplePosition);
-			m_host->log(Warning, format("insert silence (%s ms)", numSilenceSamples * 1000.0f / m_outputFormat.sampleRate).c_str());
+			m_host->log(Warning, format("insert silence (%sms) (delta=%ss)", numSilenceSamples * 1000.0f / m_outputFormat.sampleRate,
+			    (double)relativeTimePositionIn180k / IClock::Rate).c_str());
 			silenceSamples(buffer, (int)numSilenceSamples);
 			numSamplesToProduce -= numSilenceSamples;
 		}
@@ -215,7 +219,7 @@ struct SDLAudio : ModuleS {
 	int64_t m_fifoTime;
 };
 
-Modules::IModule* createObject(KHost* host, void* va) {
+IModule* createObject(KHost* host, void* va) {
 	auto clock = (IClock*)va;
 	enforce(host, "SDLAudio: host can't be NULL");
 	return createModule<SDLAudio>(host, clock).release();

@@ -106,7 +106,7 @@ struct AudioConvert : ModuleS {
 			if(inputMediaTime != -1) {
 				auto const expectedInputTime = inputMediaTime + timescaleToClock(inputSampleCount, audioData->format.sampleRate);
 				auto const actualInputTime = data->get<PresentationTime>().time;
-				if(actualInputTime && clockToTimescale(std::abs(actualInputTime - expectedInputTime), 1000) > 1) {
+				if(actualInputTime && clockToTimescale(std::abs(actualInputTime - expectedInputTime), 1000) > 25) {
 					m_host->log(Warning, format("input gap: %sms", (actualInputTime - expectedInputTime)*1000.0/IClock::Rate).c_str());
 					resyncNeeded = true;
 				}
@@ -152,11 +152,8 @@ struct AudioConvert : ModuleS {
 
 		/*returns true when more data is available with @targetNumSamples current value*/
 		bool doConvert(int targetNumSamples, const void* pSrc, int srcNumSamples) {
-			if (!m_out) {
-				m_out = output->allocData<DataPcm>(0);
-				m_out->format = m_dstFormat;
-				m_out->setSampleCount(m_dstLen);
-			}
+			if (!m_out)
+				m_out = output->allocData<DataPcm>(m_dstLen, m_dstFormat);
 
 			uint8_t* dstPlanes[AUDIO_PCM_PLANES_MAX];
 			for (int i=0; i<m_dstFormat.numPlanes; ++i) {
@@ -178,7 +175,6 @@ struct AudioConvert : ModuleS {
 
 			if (outNumSamples == targetNumSamples) {
 				auto const outPlaneSize = m_dstLen * m_dstFormat.getBytesPerSample() / m_dstFormat.numPlanes;
-				m_out->setSampleCount(m_dstLen);
 				for (int i = 0; i < m_dstFormat.numPlanes; ++i) {
 					/*pad with zeroes on last uncopied framing bytes*/
 					auto const outSizeInBytes = m_outLen * m_dstFormat.getBytesPerSample() / m_dstFormat.numPlanes;
@@ -186,7 +182,7 @@ struct AudioConvert : ModuleS {
 				}
 
 				auto const mediaTime = inputMediaTime + timescaleToClock(accumulatedTimeInDstSR, m_dstFormat.sampleRate);
-				m_out->setMediaTime(mediaTime);
+				m_out->set(PresentationTime{mediaTime});
 				accumulatedTimeInDstSR += m_dstLen;
 
 				output->post(m_out);
@@ -210,29 +206,28 @@ struct AudioConvert : ModuleS {
 
 		void configure(const PcmFormat &srcFormat) {
 			AVSampleFormat avSrcFmt, avDstFmt;
+			AVChannelLayout avSrcChannelLayout, avDstChannelLayout;
 			int avSrcSampleRate, avDstSampleRate;
-			AVChannelLayout srcLayout;
-			AVChannelLayout dstLayout;
-			libavAudioCtxConvertLibav(&srcFormat, avSrcSampleRate, avSrcFmt, &srcLayout);
-			libavAudioCtxConvertLibav(&m_dstFormat, avDstSampleRate, avDstFmt, &dstLayout);
 
-			int sts = swr_alloc_set_opts2(&m_resampler->m_SwrContext,
-			        &dstLayout,
-			        avDstFmt,
-			        avDstSampleRate,
-			        &srcLayout,
-			        avSrcFmt,
-			        avSrcSampleRate,
+			libavAudioCtxConvertLibav(&srcFormat, avSrcSampleRate, avSrcFmt, &avSrcChannelLayout);
+			libavAudioCtxConvertLibav(&m_dstFormat, avDstSampleRate, avDstFmt, &avDstChannelLayout);
+
+			int ret = swr_alloc_set_opts2(
+			        &m_resampler->m_SwrContext,
+			        &avDstChannelLayout, avDstFmt, avDstSampleRate,
+			        &avSrcChannelLayout, avSrcFmt, avSrcSampleRate,
 			        0, nullptr);
-			if (!m_resampler->m_SwrContext || sts != 0)
+
+			if (ret < 0 || !m_resampler->m_SwrContext)
 				throw error("Impossible to set options to the audio resampler while configuring.");
 
 			m_resampler->init();
 
 			m_host->log(Info, format("Converter configured to: %s -> %s",
-			        PcmFormatToString(srcFormat),
-			        PcmFormatToString(m_dstFormat)
+			    PcmFormatToString(srcFormat),
+			    PcmFormatToString(m_dstFormat)
 			    ).c_str());
+
 		}
 
 	private:
@@ -261,9 +256,9 @@ IModule* createObject(KHost* host, void* va) {
 
 	enforce(samples == -1 || (samples >= 0 && samples < 1024 * 1024), format("AudioConvert: sample count (%s) must be valid", samples).c_str());
 	if(src.sampleRate == 0)
-		return Modules::createModule<AudioConvert>(host, dst, samples).release();
+		return createModule<AudioConvert>(host, dst, samples).release();
 	else
-		return Modules::createModule<AudioConvert>(host, src, dst, samples).release();
+		return createModule<AudioConvert>(host, src, dst, samples).release();
 }
 
 auto const registered = Factory::registerModule("AudioConvert", &createObject);

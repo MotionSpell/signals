@@ -3,12 +3,14 @@ set(LIB_PIPELINE_INCS
     filter.hpp
     pipeline.hpp
     graph.hpp
+    graph_builder.hpp
     stats.hpp
 )
 
 set(LIB_PIPELINE_SRCS
     filter.cpp
     filter.hpp
+    graph_builder.cpp
     pipeline.cpp
     pipeline.hpp
 )

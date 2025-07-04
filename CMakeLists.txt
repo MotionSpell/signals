@@ -140,6 +140,7 @@ if (NOT TARGET gpac::gpac)
         set(GPAC_FOUND TRUE)
     endif()
 endif()
+find_package(RapidJSON CONFIG REQUIRED)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 

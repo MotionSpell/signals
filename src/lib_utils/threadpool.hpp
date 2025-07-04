@@ -25,7 +25,7 @@ class ThreadPool {
 			}
 		}
 
-		void submit(std::function<void()> f)	{
+		void submit(std::function<void()> f) {
 			assert(f);
 
 			workQueue.push(f);

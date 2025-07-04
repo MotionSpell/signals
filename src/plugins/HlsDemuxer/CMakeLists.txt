@@ -2,10 +2,6 @@
 set(EXE_HlsDemuxer_SRCS
     hls_demux.cpp
     ${SIGNALS_TOP_SOURCE_DIR}/src/lib_media/common/http_puller.cpp
-    )
-file(GLOB LIB_MODULES_SRCS 
-    ${SIGNALS_TOP_SOURCE_DIR}/src/lib_modules/utils/*.cpp
-    ${SIGNALS_TOP_SOURCE_DIR}/src/lib_modules/core/*.cpp
 )
 
 

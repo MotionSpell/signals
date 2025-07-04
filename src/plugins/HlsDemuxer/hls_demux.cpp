@@ -1,12 +1,14 @@
-// holds the chain: [dash downloader] => ( [mp4demuxer] => [restamper] )*
+// holds the chain: [dash/hls downloader] => ( [mp4/ts demuxer] => [restamper] )*
 #include "lib_utils/log_sink.hpp"
 #include "lib_modules/utils/factory.hpp"
 #include "hls_demux.hpp"
 #include "lib_modules/utils/helper.hpp" // ActiveModule
+#include "lib_utils/time.hpp" // parseDate
 #include "lib_utils/tools.hpp" // enforce
+#include "lib_media/common/attributes.hpp"
 #include <sstream>
 #include <memory>
-#include <string.h> // memcpy
+#include <cstring> // memcpy
 
 using namespace std;
 using namespace Modules;
@@ -16,6 +18,10 @@ unique_ptr<Modules::In::IFilePuller> createHttpSource();
 
 namespace {
 
+bool startsWith(string s, string prefix) {
+	return s.substr(0, prefix.size()) == prefix;
+}
+
 string dirName(string path) {
 	auto i = path.rfind('/');
 	if(i != path.npos)
@@ -23,11 +29,18 @@ string dirName(string path) {
 	return path + "/";
 }
 
+string serverName(string path) {
+	auto const prefixLen = startsWith(path, "https://") ? 8 : startsWith(path, "http://") ? 7 : 0 /*assume no prefix*/;
+	auto const i = path.substr(prefixLen).find('/');
+	if(i != path.npos)
+		path = path.substr(0, prefixLen + i);
+	return path;
+}
+
 class HlsDemuxer : public Module {
 	public:
 		HlsDemuxer(KHost* host, HlsDemuxConfig* cfg)
-			: m_host(host),
-			  m_playlistUrl(cfg->url) {
+			: m_host(host), m_playlistUrl(cfg->url) {
 
 			m_host->activate(true);
 
@@ -46,6 +59,12 @@ class HlsDemuxer : public Module {
 				m_host->activate(false);
 		}
 
+	private:
+		struct Entry {
+			string url;
+			int64_t timestamp;
+		};
+
 		bool doProcess() {
 			if(!m_hasPlaylist) {
 				auto main = downloadPlaylist(m_playlistUrl);
@@ -54,9 +73,15 @@ class HlsDemuxer : public Module {
 					return false;
 				}
 
-				string subUrl = main[0];
+				string subUrl;
+				if (startsWith(main[0].url, "http"))
+					subUrl = main[0].url;
+				else if (startsWith(main[0].url, "/"))
+					subUrl = serverName(m_playlistUrl) + main[0].url;
+				else
+					subUrl = m_dirName + main[0].url;
 
-				m_chunks = downloadPlaylist(m_dirName + subUrl);
+				m_chunks = downloadPlaylist(subUrl);
 				m_hasPlaylist = true;
 			}
 
@@ -65,40 +90,66 @@ class HlsDemuxer : public Module {
 				return false;
 			}
 
-			auto chunkUrl = m_dirName + m_chunks[0];
-			m_host->log(Debug, ("Download chunk: '" + chunkUrl + "'").c_str());
-			auto chunk = download(m_puller, chunkUrl.c_str());
-			m_chunks.erase(m_chunks.begin());
+			while (!m_chunks.empty()) {
+				auto const chunkUrl = m_dirName + m_chunks[0].url;
+				m_host->log(Debug, ("Process chunk: '" + chunkUrl + "'").c_str());
 
-			auto data = m_output->allocData<DataRaw>(chunk.size());
-			if(chunk.size())
-				memcpy(data->buffer->data().ptr, chunk.data(), chunk.size());
-			m_output->post(data);
+				// live mode: signal segments but only download the last one
+				std::vector<uint8_t> chunk;
+				if (!m_live || m_chunks.size() == 1)
+					chunk = download(m_puller, chunkUrl.c_str());
+
+				auto data = m_output->allocData<DataRaw>(chunk.size());
+				data->set(PresentationTime { m_chunks[0].timestamp });
+				if(chunk.size())
+					memcpy(data->buffer->data().ptr, chunk.data(), chunk.size());
+				m_output->post(data);
+
+				m_chunks.erase(m_chunks.begin());
+			}
 
 			return true;
 		}
 
-		vector<string> downloadPlaylist(string url) {
+		vector<Entry> downloadPlaylist(string url) {
 			auto contents = download(m_puller, url.c_str());
-			vector<string> r;
+			vector<Entry> r;
+			int64_t programDateTime = 0;
+			int segDur = 0;
+			m_live = true;
 			string line;
 			stringstream ss(string(contents.begin(), contents.end()));
 			while(getline(ss, line)) {
-				if(line.empty() || line[0] == '#')
+				if(line.empty())
 					continue;
-				r.push_back(line);
+
+				if(line[0] == '#') {
+					if (startsWith(line, "#EXT-X-PROGRAM-DATE-TIME:"))
+						programDateTime = fractionToClock(parseDate(line.substr(strlen("#EXT-X-PROGRAM-DATE-TIME:"))));
+					else if (startsWith(line, "#EXT-X-TARGETDURATION:"))
+						segDur = (int)(stof(line.substr(strlen("#EXT-X-TARGETDURATION:"))) * IClock::Rate);
+					else if (startsWith(line, "#EXTINF:"))
+						segDur = (int)(stof(line.substr(strlen("#EXTINF:"))) * IClock::Rate);
+					else if (startsWith(line, "#EXT-X-ENDLIST"))
+						m_live = false;
+
+					continue;
+				}
+
+				r.push_back( { line, programDateTime } );
+				programDateTime += segDur;
 			}
 			return r;
 		}
 
-	private:
 		KHost* const m_host;
 		string const m_playlistUrl;
 		IFilePuller* m_puller;
 		OutputDefault* m_output = nullptr;
 		bool m_hasPlaylist = false;
+		bool m_live = true;
 		string m_dirName;
-		vector<string> m_chunks;
+		vector<Entry> m_chunks;
 		unique_ptr<IFilePuller> m_internalPuller;
 };
 

@@ -9,6 +9,7 @@ using namespace Modules;
 using namespace Pipelines;
 
 using Bool = std::atomic<bool>;
+using namespace std::chrono;
 
 namespace {
 
@@ -18,7 +19,7 @@ struct Source : Modules::Module {
 		host->activate(true);
 	}
 	void process() override {
-		out->post(out->allocData<DataRaw>(0));
+		out->post(out->allocData<DataRaw>(1));
 		if(sent)
 			host->activate(false);
 	}
@@ -75,7 +76,7 @@ unittest("pipeline: dynamic module connection of a new source module") {
 	p.connect(src2, GetInputPin(dualInput, 1));
 	p.start(); //start the new source
 	while (!received) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(10ms);
 	}
 	p.exitSync(); //stop src
 	p.waitForEndOfStream();
@@ -144,7 +145,7 @@ unittest("pipeline: dynamic module disconnection (remove module dynamically)") {
 	p.connect(dualInput, receiver);
 	p.start();
 	while (!received) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(10ms);
 	}
 
 	// Remove the middle filter

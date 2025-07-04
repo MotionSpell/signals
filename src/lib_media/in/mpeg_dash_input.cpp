@@ -7,6 +7,7 @@
 #include "../common/mpeg_dash_parser.hpp"
 #include "mpeg_dash_input.hpp"
 #include <algorithm> // max
+#include <atomic>
 #include <chrono>
 #include <cstring> // memcpy
 #include <map>
@@ -20,44 +21,48 @@ string expandVars(string input, map<string,string> const& values);
 namespace Modules {
 namespace In {
 
-/*binary semaphore blocking post() with a thread executor*/
-struct BinaryBlockingExecutor {
-		BinaryBlockingExecutor(exception_ptr eptr)
-			: eptr(eptr), th(&BinaryBlockingExecutor::threadProc, this) {
+/*binary threaded executor: will execute the latest queued request only*/
+struct BinaryExecutor {
+		BinaryExecutor(exception_ptr eptr)
+			: eptr(eptr), th(&BinaryExecutor::threadProc, this), fct(nullptr) {
+			done = false;
 		}
 
-		~BinaryBlockingExecutor() {
-			q.push(nullptr);
-			qEmpty.notify_all();
-			th.join();
+		~BinaryExecutor() {
+			fct = nullptr; //cancel unflushed task (if any) and signal end of queue
+			done = true;   //unlock queue
+			th.join();     //return as soon as current processing is finished
 		}
 
-		void post(function<void()> fct) {
-			{
-				unique_lock<mutex> lock(m);
-				while (count == 0) {
-					if (eptr)
-						rethrow_exception(eptr);
+		void post(function<void()> next, bool priority = false) {
+			if (eptr)
+				rethrow_exception(eptr);
 
-					qEmpty.wait_for(lock, chrono::milliseconds(100));
-				}
-				count--;
-			}
+			unique_lock<mutex> lock(m);
+			if (fct && !priority)
+				return;
 
-			q.push(fct);
+			fct = next;
 		}
 
 	private:
 		void threadProc() {
 			try {
-				while (auto f = q.pop()) {
+				while (!done) {
+					function<void()> next = nullptr;
+
 					{
 						unique_lock<mutex> lock(m);
-						count++;
-						qEmpty.notify_one();
+						if (fct) {
+							next = fct;
+							fct = nullptr;
+						}
 					}
 
-					f();
+					if (next)
+						next();
+					else
+						this_thread::sleep_for(chrono::milliseconds(100));
 				}
 			} catch(...) {
 				eptr = current_exception();
@@ -66,25 +71,23 @@ struct BinaryBlockingExecutor {
 
 		exception_ptr eptr;
 		thread th;
-		mutex m;
-		Queue<function<void()>> q;
-		int count = 1;
-		condition_variable qEmpty;
+		mutex m; //protects @fct
+		function<void()> fct;
+		std::atomic_bool done;
 };
 
 struct MPEG_DASH_Input::Stream {
 	Stream(OutputDefault* out, Representation const * rep, Fraction segmentDuration, unique_ptr<IFilePuller> source, exception_ptr eptr)
-		: out(out), rep(rep), segmentDuration(segmentDuration), source(std::move(source)), executor(new BinaryBlockingExecutor(eptr)) {
+		: out(out), rep(rep), segmentDuration(segmentDuration), source(std::move(source)), executor(new BinaryExecutor(eptr)) {
 	}
 
 	OutputDefault* out;
 	Representation const * rep;
 	bool initializationChunkSent = false;
-	bool anySegmentDataReceived = false;
 	int64_t currNumber = 0;
 	Fraction segmentDuration;
 	unique_ptr<IFilePuller> source;
-	unique_ptr<BinaryBlockingExecutor> executor;
+	unique_ptr<BinaryExecutor> executor;
 };
 
 static string dirName(string path) {
@@ -141,30 +144,16 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 	for(auto& stream : m_streams) {
 		stream->currNumber = stream->rep->startNumber(mpd.get());
 		if(mpd->dynamic) {
-			if (mpd->mediaPresentationDuration) {
-				if (stream->segmentDuration.num == 0)
-					throw runtime_error("No duration for stream");
-				// Note that mediaPresentationDuration is in seconds,
-				// so this will give a value that is too low (at most one second).
-				stream->currNumber += int64_t((stream->segmentDuration.inverse() * mpd->mediaPresentationDuration));
-				const int leeway = 1;
-				stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
-			} else {
-				auto now = mpd->publishTime;
-				if (!mpd->publishTime)
-					now = (int64_t)getUTC();
+			auto now = mpd->publishTime;
+			if(!mpd->publishTime)
+				now = (int64_t)getUTC();
 
-				if (stream->segmentDuration.num == 0)
-					throw runtime_error("No duration for stream");
+			if (stream->segmentDuration.num == 0)
+				throw runtime_error("No duration for stream");
 
-				stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
-				// HACK: add one segment latency.
-				// HACK modified by jack: also add at least a second, to cater for the times
-				// in the MPD to have a 1-second resolution.
-				int leeway = 2;
-				leeway += int(stream->segmentDuration.inverse());
-				stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
-			}
+			stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
+			// HACK: add one segment latency
+			stream->currNumber = std::max<int64_t>(stream->currNumber-2, stream->rep->startNumber(mpd.get()));
 		}
 	}
 }
@@ -180,6 +169,7 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		// this adaptation set is disabled: move to the next step
 		if (stream->initializationChunkSent)
 			stream->currNumber++;
+
 		return;
 	}
 
@@ -207,6 +197,7 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		}
 	}
 
+	m_host->log(Debug, format("wget: '%s'", url).c_str());
 
 	bool empty = true;
 
@@ -217,26 +208,16 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		memcpy(data->buffer->data().ptr, chunk.ptr, chunk.len);
 		stream->out->post(data);
 	};
-	const int retrySeconds = 2;
-	std::chrono::time_point<std::chrono::system_clock> retryUntil = std::chrono::system_clock::now() + std::chrono::seconds(retrySeconds);
-	while(std::chrono::system_clock::now() < retryUntil) {
-		m_host->log(Debug, format("wget: '%s'", url).c_str());
-		stream->source->wget(url.c_str(), onBuffer);
-		m_host->log(Debug, format("wget done, empty=%s: '%s'", (int)empty, url).c_str());
-		if (!empty) break;
-		if (!stream->anySegmentDataReceived) break;
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
+
+	stream->source->wget(url.c_str(), onBuffer);
+
 	if (empty) {
-		if (mpd->dynamic && !stream->anySegmentDataReceived) {
-			const int leeway = 2; // go back from leeway-1 segment
-			stream->currNumber = std::max<int64_t>(stream->currNumber - leeway, rep->startNumber(mpd.get())); // too early, retry
+		if (mpd->dynamic) {
+			stream->currNumber = std::max<int64_t>(stream->currNumber - 1, rep->startNumber(mpd.get())); // too early, retry
 			return;
 		}
 		m_host->log(Error, format("can't download file: '%s'", url).c_str());
 		m_host->activate(false);
-	} else {
-		stream->anySegmentDataReceived = stream->initializationChunkSent;
 	}
 
 	stream->initializationChunkSent = true;
@@ -253,6 +234,7 @@ void MPEG_DASH_Input::process() {
 		m_host->activate(false);
 		return;
 	}
+
 	for(auto& stream : m_streams)
 		stream->executor->post(std::bind(&MPEG_DASH_Input::processStream, this, stream.get()));
 }
@@ -283,10 +265,11 @@ void MPEG_DASH_Input::enableStream(int asIdx, int repIdx) {
 		throw error("enableStream(): wrong representation index");
 
 	m_streams[asIdx]->executor->post([this, asIdx, repIdx]() {
-		auto &newRep = m_streams[asIdx]->rep->set(mpd.get()).representations[repIdx];
-		m_streams[asIdx]->currNumber += newRep.startNumber(mpd.get()) - m_streams[asIdx]->rep->startNumber(mpd.get());
+		auto curRep = m_streams[asIdx]->rep;
+		auto &newRep = curRep->set(mpd.get()).representations[repIdx];
+		m_streams[asIdx]->currNumber += newRep.startNumber(mpd.get()) - curRep->startNumber(mpd.get());
 		m_streams[asIdx]->rep = &newRep;
-	});
+	}, true);
 }
 
 void MPEG_DASH_Input::disableStream(int asIdx) {
@@ -295,8 +278,9 @@ void MPEG_DASH_Input::disableStream(int asIdx) {
 
 	m_streams[asIdx]->executor->post([this, asIdx]() {
 		m_streams[asIdx]->rep = nullptr;
-	});
+	}, true);
 }
 
 }
 }
+

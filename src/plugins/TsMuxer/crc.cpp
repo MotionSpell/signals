@@ -1,5 +1,4 @@
-#include <cstdint>
-#include "lib_modules/core/buffer.hpp" // SpanC
+#include "span.hpp"
 
 struct CrcTable {
 	uint32_t data[256];

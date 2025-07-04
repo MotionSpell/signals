@@ -8,6 +8,7 @@
     "libjpeg-turbo",
     "freetype",
     "nghttp2",
-    "x264"
+    "x264",
+    "rapidjson"
   ]
 }

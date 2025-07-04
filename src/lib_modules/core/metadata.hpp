@@ -8,6 +8,7 @@ enum StreamType {
 	UNKNOWN_ST = -1,
 	AUDIO_RAW,    //uncompressed audio
 	VIDEO_RAW,    //uncompressed video
+	SUBTITLE_RAW, //subtitles in canonical format
 	AUDIO_PKT,    //compressed audio
 	VIDEO_PKT,    //compressed video
 	SUBTITLE_PKT, //subtitles and captions
@@ -36,7 +37,7 @@ struct IMetadata {
 	}
 	bool isSubtitle() const {
 		switch (type) {
-		case SUBTITLE_PKT: return true;
+		case SUBTITLE_PKT: case SUBTITLE_RAW: return true;
 		default: return false;
 		}
 	}

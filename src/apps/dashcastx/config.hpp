@@ -4,7 +4,7 @@
 #include <vector>
 #include "lib_media/common/resolution.hpp"
 
-struct Video { //FIXME: this can be factorized with other params
+struct Video {
 	Resolution res;
 	int bitrate;
 	int type;

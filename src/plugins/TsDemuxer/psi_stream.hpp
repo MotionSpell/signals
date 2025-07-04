@@ -9,13 +9,12 @@ auto const TABLE_ID_PMT = 2;
 
 static void skip(BitReader& r, int byteCount, const char* what) {
 	if(r.remaining() < byteCount)
-		throw runtime_error(format("Invalid %s (value: %s)", what, byteCount));
+		throw runtime_error(format("Error while skipping \"%s\": %s bytes remains out of %s", what, r.remaining(), byteCount));
 	for(int i=0; i < byteCount; ++i)
 		r.u(8);
 }
 
 struct PsiStream : Stream {
-
 		struct EsInfo {
 			int pid, mpegStreamType;
 		};
@@ -29,7 +28,6 @@ struct PsiStream : Stream {
 		}
 
 		void push(SpanC data, bool pusi) override {
-
 			BitReader r = {data};
 			if(pusi) {
 				int pointerField = r.u(8);
@@ -49,7 +47,7 @@ struct PsiStream : Stream {
 				m_host->log(Warning, "Zero-bit in PSI header is not zero");
 
 			/*auto const reserved1 =*/ r.u(2);
-			auto const section_length = r.u(12);
+			auto /*const*/ section_length = r.u(12);
 
 			auto sectionStart = r.byteOffset();
 			if(r.remaining() < section_length)
@@ -127,6 +125,10 @@ struct PsiStream : Stream {
 		}
 
 		void flush() override {
+		}
+
+		bool reset() override {
+			return false;
 		}
 
 	private:

@@ -505,7 +505,7 @@ void GPACMuxMP4::closeSegment(bool isLastSeg) {
 
 	if (segmentPolicy == FragmentedSegment) {
 		GF_Err e = gf_isom_close_segment(isoCur, 0, 0, 0, 0, 0, GF_FALSE, GF_FALSE, (Bool)isLastSeg, (Bool)(!initName.empty()),
-		        (compatFlags & Browsers) ? 0 : GF_4CC('e', 'o', 'd', 's'), nullptr, nullptr, &lastSegmentSize);
+		    (compatFlags & Browsers) ? 0 : GF_4CC('e', 'o', 'd', 's'), nullptr, nullptr, &lastSegmentSize);
 		if (e != GF_OK) {
 			if (m_DTS == 0)
 				return;
@@ -562,7 +562,7 @@ void GPACMuxMP4::closeFragment() {
 			auto const isSuspicious = deltaRealTimeInMs < 0 || deltaRealTimeInMs > curFragmentStartInTs || curFragmentDurInTs != fractionToTimescale(segmentDuration, timeScale);
 			m_host->log(isSuspicious ? Warning : Debug,
 			    format("Closing MSS fragment with absolute time %s %s UTC and duration %s (timescale %s, time=%s, deltaRT=%s)",
-			        getDay(), getTimeFromUTC(), curFragmentDurInTs, timeScale, absTimeInTs, deltaRealTimeInMs).c_str());
+			    getDay(), getTimeFromUTC(), curFragmentDurInTs, timeScale, absTimeInTs, deltaRealTimeInMs).c_str());
 		}
 
 		SAFE(gf_isom_set_traf_mss_timeext(isoCur, trackId, absTimeInTs, curFragmentDurInTs));
@@ -767,7 +767,7 @@ void GPACMuxMP4::declareStreamVideo(const MetadataPktVideo* metadata) {
 		sdesc.codec_tag = MP4_4CC;
 		isAnnexB = false;
 		m_host->log(Warning, format("Using generic packaging for codec '%s%s%s%s'",
-		        (char)((MP4_4CC>>24)&0xff), (char)((MP4_4CC>>16)&0xff), (char)((MP4_4CC>>8)&0xff), (char)(MP4_4CC&0xff)).c_str());
+		    (char)((MP4_4CC>>24)&0xff), (char)((MP4_4CC>>16)&0xff), (char)((MP4_4CC>>8)&0xff), (char)(MP4_4CC&0xff)).c_str());
 
 		sdesc.extension_buf = (char*)gf_malloc(extradata.len);
 		memcpy(sdesc.extension_buf, extradata.ptr, extradata.len);
@@ -851,8 +851,9 @@ void GPACMuxMP4::sendSegmentToOutput(bool EOS) {
 		SAFE(gf_isom_write(isoCur));
 	}
 
-	auto out = output->allocData<DataRaw>(0);
+	std::shared_ptr<DataRaw> out;
 	if (gf_isom_get_filename(isoCur)) {
+		out = output->allocData<DataRaw>(0); // data conveyed in file
 		lastSegmentSize = fileSize(segmentName);
 	} else {
 		auto const newBsNeeded = EOS || ( (compatFlags & FlushFragMemory) && curFragmentDurInTs );
@@ -862,7 +863,7 @@ void GPACMuxMP4::sendSegmentToOutput(bool EOS) {
 			m_host->log(Debug, "Empty segment. Ignore.");
 			return;
 		}
-		out->buffer->resize(contents.len);
+		out = output->allocData<DataRaw>(contents.len);
 		if(contents.len)
 			memcpy(out->buffer->data().ptr, contents.ptr, contents.len);
 		gf_free(contents.ptr);
@@ -914,7 +915,7 @@ void GPACMuxMP4::sendSegmentToOutput(bool EOS) {
 	if (!(compatFlags & SegNumStartsAtZero)) {
 		curSegmentStartInTs += rescale(firstDataAbsTimeInMs, 1000, timeScale);
 	}
-	out->setMediaTime(curSegmentStartInTs, timeScale);
+	out->set(PresentationTime{timescaleToClock((int64_t)curSegmentStartInTs, timeScale)});
 	output->post(out);
 
 	if (segmentPolicy == IndependentSegment) {

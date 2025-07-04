@@ -5,21 +5,23 @@
 #include "lib_media/common/resolution.hpp"
 #include "lib_utils/fraction.hpp"
 #include "lib_modules/core/metadata.hpp"
-#include "lib_modules/core/buffer.hpp" // SpanC
+#include "span.hpp"
 #include "pcm.hpp" // AudioSampleFormat
 #include "pixel_format.hpp" // PixelFormat
 
 namespace Modules {
 
-//TODO: should be picture and Pcm and return the same fields as MetadataPkt
-struct MetadataRawVideo : public IMetadata {
-	MetadataRawVideo() : IMetadata(VIDEO_RAW) {
-	}
+//TODO: Raw should be picture and Pcm and return the same fields as MetadataPkt
+struct MetadataRawVideo : IMetadata {
+	MetadataRawVideo() : IMetadata(VIDEO_RAW) {}
 };
 
-struct MetadataRawAudio : public IMetadata {
-	MetadataRawAudio() : IMetadata(AUDIO_RAW) {
-	}
+struct MetadataRawAudio : IMetadata {
+	MetadataRawAudio() : IMetadata(AUDIO_RAW) {}
+};
+
+struct MetadataRawSubtitle : IMetadata {
+	MetadataRawSubtitle() : IMetadata(SUBTITLE_RAW) {}
 };
 
 struct MetadataPkt : public IMetadata {

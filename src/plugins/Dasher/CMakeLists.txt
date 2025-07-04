@@ -4,11 +4,6 @@ set(EXE_MPEG_DASH_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/mpeg_dash.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mpd.cpp
 )
-file(GLOB LIB_MODULES_SRCS 
-    ${SIGNALS_TOP_SOURCE_DIR}/src/lib_modules/utils/*.cpp
-    ${SIGNALS_TOP_SOURCE_DIR}/src/lib_modules/core/*.cpp
-)
-
 
 list(APPEND EXE_MPEG_DASH_SRCS
     ${LIB_MODULES_SRCS}

@@ -3,7 +3,7 @@
 #include <atomic>
 
 #include "i_filter.hpp"
-#include "log_sink.hpp"
+#include "lib_utils/log_sink.hpp"
 #include "lib_signals/executor.hpp" // IExecutor
 #include "lib_modules/core/module.hpp"
 
@@ -47,7 +47,6 @@ class Filter :
 		Metadata getOutputMetadata(int i) override;
 
 		bool isSource();
-
 		void startSource();
 		void stopSource();
 
@@ -65,7 +64,7 @@ class Filter :
 
 		// IEventSink implementation
 		void endOfStream() override;
-		void exception(std::exception_ptr eptr) override;
+		bool exception(std::exception_ptr eptr) override;
 
 		LogSink* const m_log;
 		std::string const m_name;

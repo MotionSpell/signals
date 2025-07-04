@@ -3,9 +3,7 @@
 #include "lib_modules/utils/loader.hpp"
 #include "lib_media/common/metadata.hpp"
 #include "lib_media/common/attributes.hpp"
-#include "../telx2ttml.hpp"
-#include "lib_utils/log_sink.hpp"
-#include <string.h>
+#include "../telx_decoder.hpp"
 
 using std::make_shared;
 using namespace Tests;
@@ -26,22 +24,23 @@ std::shared_ptr<DataBase> getTeletextTestFrame() {
 	};
 
 	auto r = createPacket(teletext);
+	r->set(PresentationTime{0});
 	r->setMetadata(make_shared<MetadataPkt>(SUBTITLE_PKT));
 	return r;
 }
 }
 
-unittest("telx2ttml: simple") {
-	TeletextToTtmlConfig cfg;
-	auto reader = loadModule("TeletextToTTML", &NullHost, &cfg);
+unittest("telx_decoder: simple") {
+	TeletextDecoderConfig cfg;
+	auto reader = loadModule("TeletextDecoder", &NullHost, &cfg);
 	reader->getInput(0)->push(getTeletextTestFrame());
 	reader->process();
 }
 
 static
 void runTest(SpanC testdata) {
-	TeletextToTtmlConfig cfg;
-	auto reader = loadModule("TeletextToTTML", &NullHost, &cfg);
+	TeletextDecoderConfig cfg;
+	auto reader = loadModule("TeletextDecoder", &NullHost, &cfg);
 
 	int i = 0;
 
@@ -61,13 +60,13 @@ void runTest(SpanC testdata) {
 	}
 }
 
-fuzztest("telx2ttml") {
+fuzztest("telx_decoder: fuzz test data") {
 	SpanC testdata;
 	GetFuzzTestData(testdata.ptr, testdata.len);
 	runTest(testdata);
 }
 
-unittest("telx2ttml: blind 1") {
+unittest("telx_decoder: blind 1") {
 
 	static auto runTestV = [](std::vector<uint8_t> testdata) {
 		return runTest({testdata.data(), testdata.size()});
@@ -195,7 +194,7 @@ unittest("telx2ttml: blind 1") {
 	runTestV({0xf6, 0x02, 0x02, 0x02, 0x02, 0x02, 0x40, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x06, 0x02, 0x2c, 0x2c, 0x2c, 0x2c, 0x17, 0x10, 0x01, 0x25, 0x02, 0x02, 0x02, 0x02, 0x02, 0x24, 0x02, 0x2c, 0xe9, 0xe9, 0x10, 0x00, 0xe9, 0xe9, 0xe9, 0xe9, 0xe9, 0xe9, 0xe9, 0xe9, 0xe9, 0x2c, 0x17, 0x2c, 0x17, 0x2c, 0x02, 0x02, 0x06, 0x06, 0xac, 0x2c, 0x2c, 0x2c, 0x17, 0xc7, 0x01, 0x25, 0x02, 0x02, 0x02, 0x16, 0x02, 0x24, 0x02, 0x2c, 0x2c, 0x85, 0x2c, 0x2c, 0x2c, 0x2c, });
 }
 
-unittest("telx2ttml: blind 2") {
+unittest("telx_decoder: blind 2") {
 
 	static auto runTestV = [](std::vector<uint8_t> testdata) {
 		return runTest({testdata.data(), testdata.size()});

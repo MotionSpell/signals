@@ -12,4 +12,5 @@ struct DemuxConfig {
 	std::string formatName;
 	ReadFunc func = nullptr;
 	int64_t ioTimeoutInMs = 30000; /*0 is infinite*/
+	bool preserveInitialData = false; /*default is to dispatch from the time point where all streams have data*/
 };

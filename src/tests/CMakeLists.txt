@@ -7,8 +7,7 @@ file(GLOB LIB_MODULES_SRCS
     ${SIGNALS_TOP_SOURCE_DIR}/src/lib_modules/core/*.cpp
 )
 
-
-file(GLOB LIB_MEDIA_SRCS 
+file(GLOB_RECURSE LIB_MEDIA_SRCS 
     ${SIGNALS_TOP_SOURCE_DIR}/src/lib_media/*.cpp
 )
 
@@ -25,7 +24,7 @@ set(EXE_TESTS_SRCS
 )
 
 # Add any additional source files from the 'unittests' directories
-file(GLOB_RECURSE UNITTEST_SOURCES "${SIGNALS_TOP_SOURCE_DIR}/src/*/unittests/*.cpp")
+file(GLOB_RECURSE UNITTEST_SOURCES "${SIGNALS_TOP_SOURCE_DIR}/src/*/unittests/*.cpp" "${SIGNALS_TOP_SOURCE_DIR}/src/plugins/*/unittests/*.cpp")
 list(APPEND EXE_TESTS_SRCS ${UNITTEST_SOURCES})
 
 # Define the unit tests executable target
@@ -38,6 +37,7 @@ target_link_libraries(unittests
     utils
     CURL::libcurl
     ${FFMPEG_LIBRARIES}
+    libjpeg-turbo::turbojpeg
 )
 
 # Include directories for unit tests 
