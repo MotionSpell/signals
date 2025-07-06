@@ -84,6 +84,7 @@ struct MPEG_DASH_Input::Stream {
 	OutputDefault* out;
 	Representation const * rep;
 	bool initializationChunkSent = false;
+	bool anySegmentDataReceived = false;
 	int64_t currNumber = 0;
 	Fraction segmentDuration;
 	unique_ptr<IFilePuller> source;
@@ -153,7 +154,11 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost* host, IFilePullerFactory *filePullerFact
 
 			stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
 			// HACK: add one segment latency
-			stream->currNumber = std::max<int64_t>(stream->currNumber-2, stream->rep->startNumber(mpd.get()));
+			// HACK modified by jack: also add at least a second, to cater for the times
+			// in the MPD to have a 1-second resolution.
+			int leeway = 2;
+			leeway += int(stream->segmentDuration.inverse());
+			stream->currNumber = std::max<int64_t>(stream->currNumber-leeway, stream->rep->startNumber(mpd.get()));
 		}
 	}
 }
@@ -209,15 +214,29 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		stream->out->post(data);
 	};
 
-	stream->source->wget(url.c_str(), onBuffer);
+	int retryCount = 20;
+	while(retryCount > 0) {
+		m_host->log(Debug, format("wget: '%s'", url).c_str());
+		stream->source->wget(url.c_str(), onBuffer);
+		m_host->log(Debug, format("wget done, empty=%s: '%s'", (int)empty, url).c_str());
+		retryCount--;
+		if (!empty) retryCount = 0;
+		if (!stream->anySegmentDataReceived) retryCount = 0;
+		if (retryCount > 0) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
+	}
 
 	if (empty) {
 		if (mpd->dynamic) {
-			stream->currNumber = std::max<int64_t>(stream->currNumber - 1, rep->startNumber(mpd.get())); // too early, retry
+			const int leeway = 2; // go back from leeway-1 segment
+			stream->currNumber = std::max<int64_t>(stream->currNumber - leeway, rep->startNumber(mpd.get())); // too early, retry
 			return;
 		}
 		m_host->log(Error, format("can't download file: '%s'", url).c_str());
 		m_host->activate(false);
+	} else {
+		stream->anySegmentDataReceived = stream->initializationChunkSent;
 	}
 
 	stream->initializationChunkSent = true;
