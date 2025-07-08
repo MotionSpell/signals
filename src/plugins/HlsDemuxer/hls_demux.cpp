@@ -63,6 +63,7 @@ class HlsDemuxer : public Module {
 		struct Entry {
 			string url;
 			int64_t timestamp;
+			int discontinuityNum;
 		};
 
 		bool doProcess() {
@@ -101,6 +102,7 @@ class HlsDemuxer : public Module {
 
 				auto data = m_output->allocData<DataRaw>(chunk.size());
 				data->set(PresentationTime { m_chunks[0].timestamp });
+				data->set(CueFlags {  });
 				if(chunk.size())
 					memcpy(data->buffer->data().ptr, chunk.data(), chunk.size());
 				m_output->post(data);
@@ -115,7 +117,7 @@ class HlsDemuxer : public Module {
 			auto contents = download(m_puller, url.c_str());
 			vector<Entry> r;
 			int64_t programDateTime = 0;
-			int segDur = 0;
+			int segDur = 0, discNum = 1;
 			m_live = true;
 			string line;
 			stringstream ss(string(contents.begin(), contents.end()));
@@ -128,6 +130,8 @@ class HlsDemuxer : public Module {
 						programDateTime = fractionToClock(parseDate(line.substr(strlen("#EXT-X-PROGRAM-DATE-TIME:"))));
 					else if (startsWith(line, "#EXT-X-TARGETDURATION:"))
 						segDur = (int)(stof(line.substr(strlen("#EXT-X-TARGETDURATION:"))) * IClock::Rate);
+					else if (startsWith(line, "EXT-X-DISCONTINUITY-SEQUENCE:"))
+						discNum = atoi(line.substr(strlen("#EXT-X-DISCONTINUITY-SEQUENCE::")).c_str());
 					else if (startsWith(line, "#EXTINF:"))
 						segDur = (int)(stof(line.substr(strlen("#EXTINF:"))) * IClock::Rate);
 					else if (startsWith(line, "#EXT-X-ENDLIST"))
@@ -136,7 +140,7 @@ class HlsDemuxer : public Module {
 					continue;
 				}
 
-				r.push_back( { line, programDateTime } );
+				r.push_back( { line, programDateTime, discNum } );
 				programDateTime += segDur;
 			}
 			return r;

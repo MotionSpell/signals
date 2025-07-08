@@ -14,8 +14,8 @@ struct DecodingTime {
 
 struct CueFlags {
 	enum { TypeId = 0x172C1D4F };
-	bool discontinuity;
+	int discontinuity; // discontinuity sequence number
 	bool keyframe;
-	bool unframed; // needs reframing
+	bool unframed;     // needs reframing
 };
 
