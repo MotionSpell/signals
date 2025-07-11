@@ -131,7 +131,7 @@ class HlsDemuxer : public Module {
 					else if (startsWith(line, "#EXT-X-TARGETDURATION:"))
 						segDur = (int)(stof(line.substr(strlen("#EXT-X-TARGETDURATION:"))) * IClock::Rate);
 					else if (startsWith(line, "EXT-X-DISCONTINUITY-SEQUENCE:"))
-						discNum = atoi(line.substr(strlen("#EXT-X-DISCONTINUITY-SEQUENCE::")).c_str());
+						discNum = atoi(line.substr(strlen("#EXT-X-DISCONTINUITY-SEQUENCE:")).c_str());
 					else if (startsWith(line, "#EXTINF:"))
 						segDur = (int)(stof(line.substr(strlen("#EXTINF:"))) * IClock::Rate);
 					else if (startsWith(line, "#EXT-X-ENDLIST"))
