@@ -208,8 +208,14 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 		memcpy(data->buffer->data().ptr, chunk.ptr, chunk.len);
 		stream->out->post(data);
 	};
-
-	stream->source->wget(url.c_str(), onBuffer);
+	try {
+		stream->source->wget(url.c_str(), onBuffer);
+	}
+	catch(std::runtime_error)
+	{
+		m_host->activate(false);
+		throw;
+	}
 
 	if (empty) {
 		if (mpd->dynamic) {
