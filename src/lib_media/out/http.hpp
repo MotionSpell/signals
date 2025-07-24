@@ -18,4 +18,5 @@ struct HttpOutputConfig {
 	std::vector<uint8_t> endOfSessionSuffix {};
 
 	Flags flags {};
+	int maxConnectFailCount = 3;
 };

@@ -26,8 +26,7 @@ class HTTP : public ModuleS {
 			// create pins
 			outputFinished = addOutput();
 
-			const int maxConnectFailCount = 0;
-			m_sender = createHttpSender({cfg.url, cfg.userAgent, cfg.flags.request, cfg.headers, maxConnectFailCount}, m_host);
+			m_sender = createHttpSender({cfg.url, cfg.userAgent, cfg.flags.request, cfg.headers, cfg.maxConnectFailCount}, m_host);
 		}
 
 		virtual ~HTTP() {

@@ -210,9 +210,7 @@ void MPEG_DASH_Input::processStream(Stream* stream) {
 	};
 	try {
 		stream->source->wget(url.c_str(), onBuffer);
-	}
-	catch(std::runtime_error)
-	{
+	} catch(std::runtime_error) {
 		m_host->activate(false);
 		throw;
 	}
