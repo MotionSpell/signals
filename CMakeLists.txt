@@ -80,7 +80,7 @@ else()
 endif()
 
 # Define paths for source and scripts
-set(SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/scripts")
+set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(BIN_DIR "${CMAKE_BINARY_DIR}/bin")
 set(SIGNALS_VERSION_HEADER_DIR "${CMAKE_BINARY_DIR}/version") # xxxjack not very elegant...
@@ -89,13 +89,15 @@ file(MAKE_DIRECTORY ${SIGNALS_VERSION_HEADER_DIR})
 # Generate signals_version.h using version.sh
 set(SIGNALS_VERSION_HEADER "${SIGNALS_VERSION_HEADER_DIR}/signals_version.h")
 file(WRITE "${SIGNALS_VERSION_HEADER}" "\"unknown-unknown-unknown\"")
-#if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-#    execute_process(
-#        COMMAND "${SCRIPTS_DIR}/version.sh"
-#        OUTPUT_FILE "${SIGNALS_VERSION_HEADER}"
-#    )
-#endif()
-
+if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    execute_process(
+        COMMAND "${SCRIPTS_DIR}/version.sh"
+        OUTPUT_FILE "${SIGNALS_VERSION_HEADER}"
+        WORKING_DIRECTORY ${SCRIPTS_DIR}
+    )
+    MESSAGE( STATUS "CMD_ERROR:" ${CMD_ERROR})
+    MESSAGE( STATUS "CMD_OUTPUT:" ${CMD_OUTPUT})
+endif()
 message(STATUS "Generated signals_version.h available at ${SIGNALS_VERSION_HEADER}")
 
 # Install version header
