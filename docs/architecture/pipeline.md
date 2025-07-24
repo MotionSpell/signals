@@ -43,8 +43,9 @@ pipeline.disconnect(source, 0, sink, 0);
 ```cpp
 // Lifecycle
 pipeline.start();
-pipeline.waitForEndOfStream();
-pipeline.exitSync();
+pipeline.exitSync();           //optional to stop the sources
+pipeline.waitForEndOfStream(); //recommended to flush() data in the pipes
+//pipeline destructor: stops immediately
 ```
 
 ## Threading Models
