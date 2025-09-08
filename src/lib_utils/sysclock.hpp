@@ -1,15 +1,15 @@
 #pragma once
 
-#include "clock.hpp"
 #include <chrono>
 
+#include "clock.hpp"
+
 class SystemClock : public IClock {
-	public:
-		SystemClock(double speed);
-		Fraction now() const override;
+  public:
+  SystemClock(double speed);
+  Fraction now() const override;
 
-	private:
-		std::chrono::time_point<std::chrono::high_resolution_clock> const timeStart;
-		double const speed;
+  private:
+  std::chrono::time_point<std::chrono::high_resolution_clock> const timeStart;
+  double const speed;
 };
-

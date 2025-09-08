@@ -1,102 +1,93 @@
-#include "lib_modules/modules.hpp"
-#include "lib_modules/utils/loader.hpp"
+#include "../ttml_decoder.hpp"
+
 #include "lib_media/common/attributes.hpp"
 #include "lib_media/common/subtitle.hpp"
+#include "lib_modules/modules.hpp"
+#include "lib_modules/utils/loader.hpp"
 #include "plugins/SubtitleEncoder/subtitle_encoder.hpp"
-#include "../ttml_decoder.hpp"
 
 using namespace Modules;
 
 // allows ASSERT_EQUALS on Page
-static std::ostream& operator<<(std::ostream& o, const Page& p) {
-	o << p.toString();
-	return o;
+static std::ostream &operator<<(std::ostream &o, const Page &p) {
+  o << p.toString();
+  return o;
 }
 
-static bool operator!=(const Page::Region& lhs, const Page::Region& rhs) {
-	return lhs.col != rhs.col
-	    || lhs.row != rhs.row;
+static bool operator!=(const Page::Region &lhs, const Page::Region &rhs) {
+  return lhs.col != rhs.col || lhs.row != rhs.row;
 }
 
-static bool operator!=(const Page::Style& lhs, const Page::Style& rhs) {
-	return lhs.bgColor != rhs.bgColor
-	    || lhs.color != rhs.color
-	    || lhs.doubleHeight != rhs.doubleHeight
-	    || lhs.fontFamily != rhs.fontFamily
-	    || lhs.fontSize != rhs.fontSize
-	    || lhs.lineHeight != rhs.lineHeight;
+static bool operator!=(const Page::Style &lhs, const Page::Style &rhs) {
+  return lhs.bgColor != rhs.bgColor || lhs.color != rhs.color || lhs.doubleHeight != rhs.doubleHeight ||
+        lhs.fontFamily != rhs.fontFamily || lhs.fontSize != rhs.fontSize || lhs.lineHeight != rhs.lineHeight;
 }
 
-static bool operator!=(const Page::Line& lhs, const Page::Line& rhs) {
-	return lhs.text != rhs.text
-	    || lhs.style != rhs.style
-	    || lhs.region != rhs.region;
+static bool operator!=(const Page::Line &lhs, const Page::Line &rhs) {
+  return lhs.text != rhs.text || lhs.style != rhs.style || lhs.region != rhs.region;
 }
 
-static bool operator!=(const Page& lhs, const Page& rhs) {
-	if (lhs.lines.size() != rhs.lines.size())
-		return true;
+static bool operator!=(const Page &lhs, const Page &rhs) {
+  if(lhs.lines.size() != rhs.lines.size())
+    return true;
 
-	for (size_t i=0; i<lhs.lines.size(); ++i)
-		if (lhs.lines[i] != rhs.lines[i])
-			return true;
+  for(size_t i = 0; i < lhs.lines.size(); ++i)
+    if(lhs.lines[i] != rhs.lines[i])
+      return true;
 
-	return lhs.showTimestamp != rhs.showTimestamp
-	    || lhs.hideTimestamp != rhs.hideTimestamp
-	    || lhs.numCols != rhs.numCols
-	    || lhs.numRows != rhs.numRows;
+  return lhs.showTimestamp != rhs.showTimestamp || lhs.hideTimestamp != rhs.hideTimestamp ||
+        lhs.numCols != rhs.numCols || lhs.numRows != rhs.numRows;
 }
 
 struct ZeroClock : IClock {
-	Fraction now() const override {
-		return 0;
-	};
+  Fraction now() const override { return 0; };
 };
 
 // operator!= shall be declared before this include
 #include "tests/tests.hpp"
 
 unittest("ttml_decoder: ttml_encoder sample") {
-	SubtitleEncoderConfig encCfg;
-	encCfg.splitDurationInMs = 1000;
-	encCfg.maxDelayBeforeEmptyInMs = 2000;
-	encCfg.timingPolicy = SubtitleEncoderConfig::RelativeToMedia;
-	auto enc = loadModule("SubtitleEncoder", &NullHost, &encCfg);
+  SubtitleEncoderConfig encCfg;
+  encCfg.splitDurationInMs = 1000;
+  encCfg.maxDelayBeforeEmptyInMs = 2000;
+  encCfg.timingPolicy = SubtitleEncoderConfig::RelativeToMedia;
+  auto enc = loadModule("SubtitleEncoder", &NullHost, &encCfg);
 
-	TtmlDecoderConfig decCfg;
-	auto zc = std::make_shared<ZeroClock>();
-	decCfg.clock = zc;
-	auto dec = loadModule("TTMLDecoder", &NullHost, &decCfg);
+  TtmlDecoderConfig decCfg;
+  auto zc = std::make_shared<ZeroClock>();
+  decCfg.clock = zc;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &decCfg);
 
-	ConnectOutputToInput(enc->getOutput(0), dec->getInput(0));
+  ConnectOutputToInput(enc->getOutput(0), dec->getInput(0));
 
-	auto const pageNum = 2;
-	auto const pageDurationIn180k = timescaleToClock(pageNum * encCfg.splitDurationInMs + encCfg.maxDelayBeforeEmptyInMs, 1000);
-	Page pageSent {0, pageDurationIn180k,
-	std::vector<Page::Line>({
-		{"toto", {23}, {"#ffffff", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}},
-		{"titi", {24}, {"#ff0000", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}}
-	}), 50, 30 };
-	auto data = std::make_shared<DataSubtitle>(0);
-	auto const time = pageSent.showTimestamp + pageDurationIn180k;
-	data->set(PresentationTime{time});
-	data->page = pageSent;
+  auto const pageNum = 2;
+  auto const pageDurationIn180k =
+        timescaleToClock(pageNum * encCfg.splitDurationInMs + encCfg.maxDelayBeforeEmptyInMs, 1000);
+  Page pageSent{0, pageDurationIn180k,
+        std::vector<Page::Line>(
+              {{"toto", {23}, {"#ffffff", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}},
+                    {"titi", {24}, {"#ff0000", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}}}),
+        50, 30};
+  auto data = std::make_shared<DataSubtitle>(0);
+  auto const time = pageSent.showTimestamp + pageDurationIn180k;
+  data->set(PresentationTime{time});
+  data->page = pageSent;
 
-	int received = 0;
-	ConnectOutput(dec->getOutput(0), [&](Data data) {
-		received++;
-		auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
-		pageSent.hideTimestamp = 30 * IClock::Rate; // there is no way to deduce this value here
-		ASSERT_EQUALS(pageSent, pageReceived);
-	});
+  int received = 0;
+  ConnectOutput(dec->getOutput(0), [&](Data data) {
+    received++;
+    auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
+    pageSent.hideTimestamp = 30 * IClock::Rate; // there is no way to deduce this value here
+    ASSERT_EQUALS(pageSent, pageReceived);
+  });
 
-	enc->getInput(0)->push(data);
+  enc->getInput(0)->push(data);
 
-	ASSERT_EQUALS(pageNum, received);
+  ASSERT_EQUALS(pageNum, received);
 }
 
 unittest("ttml_decoder: ebu-tt-live (WDR sample)") {
-	std::string ttml = R"|(<?xml version="1.0" encoding="UTF-8"?>
+  std::string ttml = R"|(<?xml version="1.0" encoding="UTF-8"?>
 <tt:tt xmlns:tt="http://www.w3.org/ns/ttml" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ebuttm="urn:ebu:tt:metadata" xmlns:ebuttp="urn:ebu:tt:parameters" xmlns:ebutts="urn:ebu:tt:style" xml:lang="de" ttp:cellResolution="50 30" ttp:timeBase="clock" ttp:clockMode="local" ebuttp:sequenceIdentifier="TestSequence1" ebuttp:sequenceNumber="1636064848635">
     <tt:head>
         <tt:metadata>
@@ -124,33 +115,34 @@ unittest("ttml_decoder: ebu-tt-live (WDR sample)") {
     </tt:body>
 </tt:tt>)|";
 
-	TtmlDecoderConfig cfg;
-	auto zc = std::make_shared<ZeroClock>();
-	cfg.clock = zc;
-	auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
-	int received = 0;
-	Page expected = { 0, 60 * IClock::Rate, {
-			{ "Sample of a EBU-TT-LIVE document - line 1", {23, 0}, {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"} },
-			{ "Sample of a EBU-TT-LIVE document - line 2", {24, 0}, {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"} }
-		}, 50, 30
-	};
-	ConnectOutput(dec->getOutput(0), [&](Data data) {
-		auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
-		ASSERT_EQUALS(expected, pageReceived);
-		received++;
-	});
+  TtmlDecoderConfig cfg;
+  auto zc = std::make_shared<ZeroClock>();
+  cfg.clock = zc;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
+  int received = 0;
+  Page expected = {0, 60 * IClock::Rate,
+        {{"Sample of a EBU-TT-LIVE document - line 1", {23, 0},
+               {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}},
+              {"Sample of a EBU-TT-LIVE document - line 2", {24, 0},
+                    {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}}},
+        50, 30};
+  ConnectOutput(dec->getOutput(0), [&](Data data) {
+    auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
+    ASSERT_EQUALS(expected, pageReceived);
+    received++;
+  });
 
-	auto pkt = std::make_shared<DataRaw>(ttml.size());
-	memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
-	pkt->set(PresentationTime{1789});
-	dec->getInput(0)->push(pkt);
+  auto pkt = std::make_shared<DataRaw>(ttml.size());
+  memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
+  pkt->set(PresentationTime{1789});
+  dec->getInput(0)->push(pkt);
 
-	ASSERT_EQUALS(1, received);
+  ASSERT_EQUALS(1, received);
 }
 
 unittest("ttml_decoder: ebu-tt-live (EBU LIT User Input Producer sample)") {
-	// http://ebu.github.io/ebu-tt-live-toolkit/ui/user_input_producer/index.html
-	std::string ttml = R"|(<?xml version="1.0" ?>
+  // http://ebu.github.io/ebu-tt-live-toolkit/ui/user_input_producer/index.html
+  std::string ttml = R"|(<?xml version="1.0" ?>
 <tt:tt
         ebuttp:sequenceIdentifier="mysocket"
         ebuttp:sequenceNumber="26"
@@ -193,28 +185,29 @@ unittest("ttml_decoder: ebu-tt-live (EBU LIT User Input Producer sample)") {
 </tt:tt>
 )|";
 
-	TtmlDecoderConfig cfg;
-	auto zc = std::make_shared<ZeroClock>();
-	cfg.clock = zc;
-	auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
-	int received = 0;
-	Page expected = { 0, 10 * IClock::Rate,  { { "nils is yo", {}, { "rgb(255, 255, 255)", "rgb(0, 0, 0)", false, "sansSerif" } } }, 32, 15 };
-	ConnectOutput(dec->getOutput(0), [&](Data data) {
-		auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
-		ASSERT_EQUALS(expected, pageReceived);
-		received++;
-	});
+  TtmlDecoderConfig cfg;
+  auto zc = std::make_shared<ZeroClock>();
+  cfg.clock = zc;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
+  int received = 0;
+  Page expected = {
+        0, 10 * IClock::Rate, {{"nils is yo", {}, {"rgb(255, 255, 255)", "rgb(0, 0, 0)", false, "sansSerif"}}}, 32, 15};
+  ConnectOutput(dec->getOutput(0), [&](Data data) {
+    auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
+    ASSERT_EQUALS(expected, pageReceived);
+    received++;
+  });
 
-	auto pkt = std::make_shared<DataRaw>(ttml.size());
-	memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
-	pkt->set(PresentationTime{1789});
-	dec->getInput(0)->push(pkt);
+  auto pkt = std::make_shared<DataRaw>(ttml.size());
+  memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
+  pkt->set(PresentationTime{1789});
+  dec->getInput(0)->push(pkt);
 
-	ASSERT_EQUALS(1, received);
+  ASSERT_EQUALS(1, received);
 }
 
 unittest("ttml_decoder: ebu-tt-live (BasicDE) styling") {
-	std::string ttml = R"|(<?xml version="1.0" ?>
+  std::string ttml = R"|(<?xml version="1.0" ?>
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Profile: EBU-TT-D-Basic-DE -->
 <tt:tt xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns:tts="http://www.w3.org/ns/ttml#styling"
@@ -250,31 +243,32 @@ unittest("ttml_decoder: ebu-tt-live (BasicDE) styling") {
 
 )|";
 
-	TtmlDecoderConfig cfg;
-	auto zc = std::make_shared<ZeroClock>();
-	cfg.clock = zc;
-	auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
-	int received = 0;
-	Page expected = { 0, 30 * IClock::Rate, {
-	            { "A white sentence", {23}, { "#ffffff", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%" } },
-	            { "in a two row subtitle", {}, { "#ff0000", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%" } }
-	        }, 50, 30 };
-	ConnectOutput(dec->getOutput(0), [&](Data data) {
-		auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
-		ASSERT_EQUALS(expected, pageReceived);
-		received++;
-	});
+  TtmlDecoderConfig cfg;
+  auto zc = std::make_shared<ZeroClock>();
+  cfg.clock = zc;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
+  int received = 0;
+  Page expected = {0, 30 * IClock::Rate,
+        {{"A white sentence", {23}, {"#ffffff", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}},
+              {"in a two row subtitle", {},
+                    {"#ff0000", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}}},
+        50, 30};
+  ConnectOutput(dec->getOutput(0), [&](Data data) {
+    auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
+    ASSERT_EQUALS(expected, pageReceived);
+    received++;
+  });
 
-	auto pkt = std::make_shared<DataRaw>(ttml.size());
-	memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
-	pkt->set(PresentationTime{1789});
-	dec->getInput(0)->push(pkt);
+  auto pkt = std::make_shared<DataRaw>(ttml.size());
+  memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
+  pkt->set(PresentationTime{1789});
+  dec->getInput(0)->push(pkt);
 
-	ASSERT_EQUALS(1, received);
+  ASSERT_EQUALS(1, received);
 }
 
 unittest("[DISABLED] ttml_decoder: ebu-tt-live (BasicDE) letter styling") {
-	std::string ttml = R"|(<?xml version="1.0" ?>
+  std::string ttml = R"|(<?xml version="1.0" ?>
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Profile: EBU-TT-D-Basic-DE -->
 <tt:tt xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns:tts="http://www.w3.org/ns/ttml#styling"
@@ -312,28 +306,28 @@ unittest("[DISABLED] ttml_decoder: ebu-tt-live (BasicDE) letter styling") {
 
 )|";
 
-	TtmlDecoderConfig cfg;
-	auto zc = std::make_shared<ZeroClock>();
-	cfg.clock = zc;
-	auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
-	int received = 0;
-	Page expected = { 0, 10 * IClock::Rate,  { { "nils is yo", {}, { "#ffffff" } } } };
-	ConnectOutput(dec->getOutput(0), [&](Data data) {
-		auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
-		ASSERT_EQUALS(expected, pageReceived);
-		received++;
-	});
+  TtmlDecoderConfig cfg;
+  auto zc = std::make_shared<ZeroClock>();
+  cfg.clock = zc;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
+  int received = 0;
+  Page expected = {0, 10 * IClock::Rate, {{"nils is yo", {}, {"#ffffff"}}}};
+  ConnectOutput(dec->getOutput(0), [&](Data data) {
+    auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
+    ASSERT_EQUALS(expected, pageReceived);
+    received++;
+  });
 
-	auto pkt = std::make_shared<DataRaw>(ttml.size());
-	memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
-	pkt->set(PresentationTime{1789});
-	dec->getInput(0)->push(pkt);
+  auto pkt = std::make_shared<DataRaw>(ttml.size());
+  memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
+  pkt->set(PresentationTime{1789});
+  dec->getInput(0)->push(pkt);
 
-	ASSERT_EQUALS(1, received);
+  ASSERT_EQUALS(1, received);
 }
 
 unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR styling") {
-	std::string ttml = R"|(<?xml version="1.0"?>
+  std::string ttml = R"|(<?xml version="1.0"?>
 <tt:tt xmlns:tt="http://www.w3.org/ns/ttml" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ebuttm="urn:ebu:tt:metadata" xmlns:ebuttp="urn:ebu:tt:parameters" xmlns:ebutts="urn:ebu:tt:style" xml:lang="de" ttp:cellResolution="50 30" ttp:timeBase="clock" ttp:clockMode="local" ebuttp:sequenceIdentifier="TestSequence1" ebuttp:sequenceNumber="1656574125611">
 	<tt:head>
 		<tt:metadata>
@@ -361,36 +355,37 @@ unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR styling") {
 	</tt:body>
 </tt:tt>)|";
 
-	TtmlDecoderConfig cfg;
-	auto zc = std::make_shared<ZeroClock>();
-	cfg.clock = zc;
-	auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
-	int received = 0;
-	Page expected = { 0, 30 * IClock::Rate, {
-			{ "irgendwie so Ausrufezeichen", {23}, { "#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%" } },
-			{ "Motorradfahrer dass die haben noch so", {}, { "#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%" } }
-		}, 50, 30
-	};
-	ConnectOutput(dec->getOutput(0), [&](Data data) {
-		auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
-		ASSERT_EQUALS(expected, pageReceived);
-		received++;
-	});
+  TtmlDecoderConfig cfg;
+  auto zc = std::make_shared<ZeroClock>();
+  cfg.clock = zc;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
+  int received = 0;
+  Page expected = {0, 30 * IClock::Rate,
+        {{"irgendwie so Ausrufezeichen", {23},
+               {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}},
+              {"Motorradfahrer dass die haben noch so", {},
+                    {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}}},
+        50, 30};
+  ConnectOutput(dec->getOutput(0), [&](Data data) {
+    auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
+    ASSERT_EQUALS(expected, pageReceived);
+    received++;
+  });
 
-	auto pkt = std::make_shared<DataRaw>(ttml.size());
-	memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
-	pkt->set(PresentationTime{1789});
-	dec->getInput(0)->push(pkt);
+  auto pkt = std::make_shared<DataRaw>(ttml.size());
+  memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
+  pkt->set(PresentationTime{1789});
+  dec->getInput(0)->push(pkt);
 
-	ASSERT_EQUALS(1, received);
+  ASSERT_EQUALS(1, received);
 }
 
 unittest("ttml_decoder: parsing error (empty)") {
-	TtmlDecoderConfig cfg;
-	auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
-	std::string ttml = R"|(<?xml version="1.0"?>")|";
-	auto pkt = std::make_shared<DataRaw>(ttml.size());
-	memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
-	pkt->set(PresentationTime{1789});
-	ASSERT_THROWN(dec->getInput(0)->push(pkt));
+  TtmlDecoderConfig cfg;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
+  std::string ttml = R"|(<?xml version="1.0"?>")|";
+  auto pkt = std::make_shared<DataRaw>(ttml.size());
+  memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
+  pkt->set(PresentationTime{1789});
+  ASSERT_THROWN(dec->getInput(0)->push(pkt));
 }

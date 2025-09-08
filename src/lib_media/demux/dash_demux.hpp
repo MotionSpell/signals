@@ -6,9 +6,8 @@
 struct IAdaptationControl;
 
 struct DashDemuxConfig {
-	std::string url;
+  std::string url;
 
-	// adaptation controller: called back from constructor
-	std::function<void(IAdaptationControl*)> adaptationControlCbk = nullptr;
+  // adaptation controller: called back from constructor
+  std::function<void(IAdaptationControl *)> adaptationControlCbk = nullptr;
 };
-

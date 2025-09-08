@@ -1,30 +1,20 @@
-#include "lib_utils/tools.hpp"
-#include "lib_utils/log_sink.hpp" // Warning
-#include "lib_utils/format.hpp"
-#include "../common/attributes.hpp"
 #include "recorder.hpp"
 
-namespace Modules {
-namespace Utils {
+#include "../common/attributes.hpp"
+#include "lib_utils/format.hpp"
+#include "lib_utils/log_sink.hpp" // Warning
+#include "lib_utils/tools.hpp"
 
-Recorder::Recorder(KHost* /*host*/) {
-}
+namespace Modules { namespace Utils {
 
-void Recorder::flush() {
-	record.clear();
-}
+Recorder::Recorder(KHost * /*host*/) {}
 
-void Recorder::processOne(Data data) {
-	record.push(data);
-}
+void Recorder::flush() { record.clear(); }
 
-Data Recorder::pop() {
-	return record.pop();
-}
+void Recorder::processOne(Data data) { record.push(data); }
 
-bool Recorder::tryPop(Data &data) {
-	return record.tryPop(data);
-}
+Data Recorder::pop() { return record.pop(); }
 
-}
-}
+bool Recorder::tryPop(Data &data) { return record.tryPop(data); }
+
+}}

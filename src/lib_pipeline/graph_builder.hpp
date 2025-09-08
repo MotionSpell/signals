@@ -1,7 +1,8 @@
 #pragma once
 
-#include "pipeline.hpp"
 #include "lib_utils/json.hpp"
+
+#include "pipeline.hpp"
 
 namespace Pipelines {
 /*
@@ -13,8 +14,10 @@ converts a string from the input JSON configuration to the actual type.
 
 ConfigType is there to erase the variety of configuration types.
 */
-typedef int* ConfigType;
-typedef std::shared_ptr<ConfigType> ParseModuleConfig(std::string const &moduleType, SmallMap<std::string /*name*/, json::Value /*value*/> const& moduleConfig);
+typedef int *ConfigType;
+typedef std::shared_ptr<ConfigType> ParseModuleConfig(std::string const &moduleType,
+      SmallMap<std::string /*name*/, json::Value /*value*/> const &moduleConfig);
 
-std::unique_ptr<Pipeline> createPipelineFromJSON(const std::string &json, std::function<ParseModuleConfig> parseModuleConfig);
+std::unique_ptr<Pipeline> createPipelineFromJSON(const std::string &json,
+      std::function<ParseModuleConfig> parseModuleConfig);
 }

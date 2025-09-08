@@ -2,8 +2,8 @@
 
 namespace Modules {
 struct HardwareContextCuda {
-	HardwareContextCuda();
-	~HardwareContextCuda();
-	void *device = nullptr; //AVBufferRef
+  HardwareContextCuda();
+  ~HardwareContextCuda();
+  void *device = nullptr; // AVBufferRef
 };
 }

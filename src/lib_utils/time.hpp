@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+
 #include "fraction.hpp"
 
 Fraction getUTC();
@@ -12,7 +13,7 @@ std::string getTimeFromUTC();
 Fraction parseDate(std::string s); // "2019-03-04T15:32:17", "2019-03-04T15:32:17.500Z", "2019-03-04T15:32:17.02+02:00"
 
 struct IUtcClock {
-	virtual Fraction getTime() = 0;
+  virtual Fraction getTime() = 0;
 };
 
 extern IUtcClock *g_UtcClock;

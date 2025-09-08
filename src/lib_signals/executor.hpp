@@ -5,15 +5,13 @@
 namespace Signals {
 
 struct IExecutor {
-	virtual ~IExecutor() {}
-	virtual void call(const std::function<void()> &fn) = 0;
+  virtual ~IExecutor() {}
+  virtual void call(const std::function<void()> &fn) = 0;
 };
 
-//synchronous calls
+// synchronous calls
 class ExecutorSync : public IExecutor {
-	public:
-		void call(const std::function<void()> &fn) override {
-			fn();
-		}
+  public:
+  void call(const std::function<void()> &fn) override { fn(); }
 };
 }

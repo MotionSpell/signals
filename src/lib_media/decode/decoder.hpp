@@ -7,6 +7,6 @@ struct HardwareContextCuda;
 }
 
 struct DecoderConfig {
-	Modules::StreamType type = Modules::UNKNOWN_ST;
-	std::shared_ptr<Modules::HardwareContextCuda> hw = nullptr;
+  Modules::StreamType type = Modules::UNKNOWN_ST;
+  std::shared_ptr<Modules::HardwareContextCuda> hw = nullptr;
 };

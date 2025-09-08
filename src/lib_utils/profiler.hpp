@@ -1,22 +1,22 @@
 #pragma once
 
-#include <string>
 #include <chrono>
+#include <string>
 
 namespace Tools {
 
 class Profiler {
-	public:
-		Profiler(const std::string &name);
-		~Profiler();
+  public:
+  Profiler(const std::string &name);
+  ~Profiler();
 
-		double elapsedInSeconds();
+  double elapsedInSeconds();
 
-	private:
-		Profiler& operator= (const Profiler&) = delete;
+  private:
+  Profiler &operator=(const Profiler &) = delete;
 
-		std::string name;
-		std::chrono::high_resolution_clock::time_point startTime;
+  std::string name;
+  std::chrono::high_resolution_clock::time_point startTime;
 };
 
 }

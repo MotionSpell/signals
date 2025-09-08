@@ -5,21 +5,19 @@
 
 struct HttpSender;
 
-namespace Modules {
-namespace Stream {
+namespace Modules { namespace Stream {
 
 class MS_HSS : public ModuleS {
-	public:
-		MS_HSS(KHost* host, const std::string &url);
-		virtual ~MS_HSS();
+  public:
+  MS_HSS(KHost *host, const std::string &url);
+  virtual ~MS_HSS();
 
-		void processOne(Data data) override;
-		void flush() override;
+  void processOne(Data data) override;
+  void flush() override;
 
-	private:
-		std::unique_ptr<HttpSender> m_httpSender;
-		KHost* const m_host;
+  private:
+  std::unique_ptr<HttpSender> m_httpSender;
+  KHost *const m_host;
 };
 
-}
-}
+}}

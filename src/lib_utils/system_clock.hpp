@@ -1,6 +1,7 @@
 #pragma once
 
-#include "clock.hpp"
 #include <memory>
+
+#include "clock.hpp"
 
 extern const std::shared_ptr<IClock> g_SystemClock;

@@ -1,8 +1,10 @@
-#include "tests/tests.hpp"
-#include "lib_pipeline/pipeline.hpp"
 #include "lib_pipeline/graph_builder.hpp"
-#include "lib_modules/utils/helper.hpp"
+
 #include "lib_modules/utils/factory.hpp"
+#include "lib_modules/utils/helper.hpp"
+#include "lib_pipeline/pipeline.hpp"
+#include "tests/tests.hpp"
+
 #include <cstdlib>
 
 using namespace std;
@@ -10,34 +12,33 @@ using namespace Pipelines;
 
 namespace Modules {
 struct Dummy : public Module {
-	Dummy(KHost*) {
-		addInput();
-		addOutput();
-	}
-	Dummy(KHost*, bool oneMoreOutput) {
-		addInput();
-		addOutput();
-		if (oneMoreOutput)
-			addOutput();
-	}
-	void process() override {
-	}
+  Dummy(KHost *) {
+    addInput();
+    addOutput();
+  }
+  Dummy(KHost *, bool oneMoreOutput) {
+    addInput();
+    addOutput();
+    if(oneMoreOutput)
+      addOutput();
+  }
+  void process() override {}
 
-	static IModule* create(KHost* host, void* va) {
-		auto type = (StreamType)(uintptr_t)va;
-		if (type)
-			return createModule<Dummy>(host, type).release();
-		else
-			return createModule<Dummy>(host).release();
-	}
+  static IModule *create(KHost *host, void *va) {
+    auto type = (StreamType)(uintptr_t)va;
+    if(type)
+      return createModule<Dummy>(host, type).release();
+    else
+      return createModule<Dummy>(host).release();
+  }
 };
 
 auto const registered = Factory::registerModule("Dummy", &Dummy::create);
 }
 
 unittest("graph builder: dummy") {
-	string json =
-	    R"|({
+  string json =
+        R"|({
     "version" : 1,
     "modules" : {
         "dummy0" : {
@@ -59,7 +60,7 @@ unittest("graph builder: dummy") {
 }
 )|";
 
-	string expected = R"|(digraph {
+  string expected = R"|(digraph {
 	rankdir = "LR";
 	"Dummy (#0)";
 	"Dummy (#1)";
@@ -67,20 +68,20 @@ unittest("graph builder: dummy") {
 }
 )|";
 
-	auto p = createPipelineFromJSON(json, [](const string type, const SmallMap<std::string, json::Value> &params) {
-		ASSERT_EQUALS("Dummy", type);
-		bool param = false;
-		if (params.find("oneMoreOutput") != params.end())
-			param = params["oneMoreOutput"].intValue;
-		auto deleter = [](ConfigType *p) {delete (bool*)p;};
-		return shared_ptr<ConfigType>((ConfigType*)new bool(param), deleter);
-	});
-	ASSERT_EQUALS(expected, p->dumpDOT());
+  auto p = createPipelineFromJSON(json, [](const string type, const SmallMap<std::string, json::Value> &params) {
+    ASSERT_EQUALS("Dummy", type);
+    bool param = false;
+    if(params.find("oneMoreOutput") != params.end())
+      param = params["oneMoreOutput"].intValue;
+    auto deleter = [](ConfigType *p) { delete(bool *)p; };
+    return shared_ptr<ConfigType>((ConfigType *)new bool(param), deleter);
+  });
+  ASSERT_EQUALS(expected, p->dumpDOT());
 }
 
 unittest("graph builder: wrong connections") {
-	string json =
-	    R"|({
+  string json =
+        R"|({
     "version" : 1,
     "modules" : {
         "dummy0" : {
@@ -99,7 +100,7 @@ unittest("graph builder: wrong connections") {
 }
 )|";
 
-	string expected = R"|(digraph {
+  string expected = R"|(digraph {
 	rankdir = "LR";
 	"Dummy (#0)";
 	"Dummy (#1)";
@@ -107,12 +108,13 @@ unittest("graph builder: wrong connections") {
 }
 )|";
 
-	ASSERT_THROWN(createPipelineFromJSON(json, [](const string, const SmallMap<std::string, json::Value>&) { return nullptr; }));
+  ASSERT_THROWN(
+        createPipelineFromJSON(json, [](const string, const SmallMap<std::string, json::Value> &) { return nullptr; }));
 }
 
 unittest("graph builder: one output to multiple inputs") {
-	string json =
-	    R"|({
+  string json =
+        R"|({
     "version" : 1,
     "modules" : {
         "dummy0" : {
@@ -137,7 +139,7 @@ unittest("graph builder: one output to multiple inputs") {
 }
 )|";
 
-	string expected = R"|(digraph {
+  string expected = R"|(digraph {
 	rankdir = "LR";
 	"Dummy (#0)";
 	"Dummy (#1)";
@@ -147,16 +149,16 @@ unittest("graph builder: one output to multiple inputs") {
 }
 )|";
 
-	auto p = createPipelineFromJSON(json, [](const string, const SmallMap<std::string, json::Value>&) {
-		auto deleter = [](ConfigType *p) {delete (bool*)p;};
-		return shared_ptr<ConfigType>((ConfigType*)new bool(false), deleter);
-	});
-	ASSERT_EQUALS(expected, p->dumpDOT());
+  auto p = createPipelineFromJSON(json, [](const string, const SmallMap<std::string, json::Value> &) {
+    auto deleter = [](ConfigType *p) { delete(bool *)p; };
+    return shared_ptr<ConfigType>((ConfigType *)new bool(false), deleter);
+  });
+  ASSERT_EQUALS(expected, p->dumpDOT());
 }
 
 unittest("graph builder: using non-existing names for connection") {
-	string json =
-	    R"|({
+  string json =
+        R"|({
     "version" : 1,
     "connections" : [
         {
@@ -167,5 +169,6 @@ unittest("graph builder: using non-existing names for connection") {
 }
 )|";
 
-	ASSERT_THROWN(createPipelineFromJSON(json, [](const string, const SmallMap<std::string, json::Value>&) { return nullptr; }));
+  ASSERT_THROWN(
+        createPipelineFromJSON(json, [](const string, const SmallMap<std::string, json::Value> &) { return nullptr; }));
 }

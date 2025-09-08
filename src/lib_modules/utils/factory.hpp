@@ -4,10 +4,10 @@ struct IModule;
 struct KHost;
 
 namespace Factory {
-using CreationFunc = IModule* (KHost*, void*);
-IModule* instantiateModule(const char* name, KHost* host, void*);
-int registerModule(const char* name, CreationFunc* func);
-bool hasModule(const char* name);
+using CreationFunc = IModule *(KHost *, void *);
+IModule *instantiateModule(const char *name, KHost *host, void *);
+int registerModule(const char *name, CreationFunc *func);
+bool hasModule(const char *name);
 }
 
 }
@@ -21,7 +21,6 @@ bool hasModule(const char* name);
 #define EXPORT __attribute__((visibility("default")))
 #endif
 
-extern "C"
-{
-	EXPORT Modules::IModule* instantiate(const char* name, Modules::KHost* host, void* cfg);
+extern "C" {
+EXPORT Modules::IModule *instantiate(const char *name, Modules::KHost *host, void *cfg);
 }

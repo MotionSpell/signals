@@ -3,7 +3,6 @@
 #include <string>
 
 struct Mp4DemuxConfig {
-	std::string path;
-	int trackId = 1;
+  std::string path;
+  int trackId = 1;
 };
-

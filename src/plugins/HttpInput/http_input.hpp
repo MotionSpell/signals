@@ -3,5 +3,5 @@
 #include <string>
 
 struct HttpInputConfig {
-	std::string url;
+  std::string url;
 };

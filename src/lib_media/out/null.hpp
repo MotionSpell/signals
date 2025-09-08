@@ -2,17 +2,15 @@
 
 #include "lib_modules/utils/helper.hpp"
 
-namespace Modules {
-namespace Out {
+namespace Modules { namespace Out {
 
-//Open bar output. Thread-safe by design �
+// Open bar output. Thread-safe by design �
 struct Null : public ModuleS {
-		Null(KHost* host);
-		void processOne(Data data) override;
+  Null(KHost *host);
+  void processOne(Data data) override;
 
-	private:
-		KHost* const m_host;
+  private:
+  KHost *const m_host;
 };
 
-}
-}
+}}

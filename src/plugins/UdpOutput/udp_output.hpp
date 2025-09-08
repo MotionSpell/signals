@@ -1,7 +1,6 @@
 #pragma once
 
 struct UdpOutputConfig {
-	int ipAddr[4];
-	int port;
+  int ipAddr[4];
+  int port;
 };
-

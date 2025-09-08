@@ -4,9 +4,9 @@
 
 namespace Modules {
 struct PictureAllocator {
-	struct PictureContext {
-		std::shared_ptr<DataPicture> pic;
-	};
-	virtual PictureContext* getPicture(Resolution res, Resolution resInternal, PixelFormat format) = 0;
+  struct PictureContext {
+    std::shared_ptr<DataPicture> pic;
+  };
+  virtual PictureContext *getPicture(Resolution res, Resolution resInternal, PixelFormat format) = 0;
 };
 }

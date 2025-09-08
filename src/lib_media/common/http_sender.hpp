@@ -17,30 +17,29 @@
 //|  } // here the connection gets destroyed (whether all data was transfered or not)
 //|
 struct HttpSender {
-	virtual ~HttpSender() = default;
-	virtual void send(span<const uint8_t> data) = 0; // (send an empty span to flush)
-	virtual void appendPrefix(span<const uint8_t> prefix) = 0; // may be called multiple times
+  virtual ~HttpSender() = default;
+  virtual void send(span<const uint8_t> data) = 0; // (send an empty span to flush)
+  virtual void appendPrefix(span<const uint8_t> prefix) = 0; // may be called multiple times
 };
 
 #include <string>
 #include <vector>
 
 enum HttpRequest {
-	POST,
-	PUT,
-	DELETEX,
+  POST,
+  PUT,
+  DELETEX,
 };
 
 // make an empty POST (used to check the end point exists)
 void enforceConnection(std::string url, HttpRequest request);
 
 struct HttpSenderConfig {
-	std::string url;
-	std::string userAgent;
-	HttpRequest request = POST;
-	std::vector<std::string> extraHeaders;
-	int maxConnectFailCount = 0;
+  std::string url;
+  std::string userAgent;
+  HttpRequest request = POST;
+  std::vector<std::string> extraHeaders;
+  int maxConnectFailCount = 0;
 };
 
-std::unique_ptr<HttpSender> createHttpSender(HttpSenderConfig const& config, Modules::KHost* log);
-
+std::unique_ptr<HttpSender> createHttpSender(HttpSenderConfig const &config, Modules::KHost *log);

@@ -4,8 +4,7 @@
 #include <vector>
 
 struct HttpSinkConfig {
-	std::string baseURL;
-	std::string userAgent;
-	std::vector<std::string> headers;
+  std::string baseURL;
+  std::string userAgent;
+  std::vector<std::string> headers;
 };
-

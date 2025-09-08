@@ -3,7 +3,6 @@
 #include <string>
 
 struct FileInputConfig {
-	std::string filename;
-	int blockSize = 0;
+  std::string filename;
+  int blockSize = 0;
 };
-
