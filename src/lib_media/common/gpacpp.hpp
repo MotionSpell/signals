@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 
 extern "C" {
 #include <gpac/internal/mpd.h>

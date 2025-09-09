@@ -2,6 +2,8 @@
 
 #include "lib_modules/core/module.hpp"
 
+#include "stats.hpp"
+
 namespace Pipelines {
 
 /* Wrapper around the module's inputs.

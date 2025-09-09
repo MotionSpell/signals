@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdlib> // for std::abs
 
 struct TimeUnwrapper {
   int64_t unwrap(int64_t time) {
