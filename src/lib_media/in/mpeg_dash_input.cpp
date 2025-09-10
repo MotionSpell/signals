@@ -162,7 +162,7 @@ MPEG_DASH_Input::MPEG_DASH_Input(KHost *host, IFilePullerFactory *filePullerFact
       if(stream->segmentDuration.num == 0)
         throw runtime_error("No duration for stream");
 
-      stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime));
+      stream->currNumber += int64_t(stream->segmentDuration.inverse() * (now - mpd->availabilityStartTime)) / 1000 + 1;
       // HACK: add one segment latency
       stream->currNumber = std::max<int64_t>(stream->currNumber - 2, stream->rep->startNumber(mpd.get()));
     }
