@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
-
 template<typename T>
 std::vector<T> makeVector(std::initializer_list<T> list) {
   return std::vector<T>(list);
