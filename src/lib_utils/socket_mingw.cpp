@@ -111,7 +111,7 @@ struct Socket : ISocket {
     if(m_type != TCP)
       return true;
 
-    if(!(m_socket_client < 0))
+    if(!(m_socket_client == INVALID_SOCKET))
       return true;
 
     sockaddr_in clientAddr{};
@@ -122,7 +122,7 @@ struct Socket : ISocket {
 
     m_socket_client = accept(m_socket, (sockaddr *)&clientAddr, (socklen_t *)&clientAddrLen);
 
-    if(m_socket_client < 0)
+    if(m_socket_client == INVALID_SOCKET)
       return false; // client socket 'accept' failed
 
     return true;
