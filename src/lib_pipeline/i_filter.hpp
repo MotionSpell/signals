@@ -13,7 +13,7 @@ enum class Threading {
 };
 
 struct IFilter {
-  virtual ~IFilter(){};
+  virtual ~IFilter() {};
   virtual int getNumInputs() const = 0;
   virtual int getNumOutputs() const = 0;
   virtual Modules::Metadata getOutputMetadata(int i) = 0;
@@ -22,7 +22,7 @@ struct IFilter {
 struct InputPin {
   InputPin(IFilter *m, int idx = 0)
       : mod(m)
-      , index(idx){};
+      , index(idx) {};
   IFilter *mod;
   int index = 0;
 };
@@ -30,7 +30,7 @@ struct InputPin {
 struct OutputPin {
   OutputPin(IFilter *m, int idx = 0)
       : mod(m)
-      , index(idx){};
+      , index(idx) {};
   IFilter *mod;
   int index = 0;
 };

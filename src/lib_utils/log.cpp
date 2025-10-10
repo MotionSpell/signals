@@ -8,8 +8,8 @@
 #include "system_clock.hpp"
 
 #ifdef _WIN32
-#include <windows.h>
 #include <wincon.h>
+#include <windows.h>
 static HANDLE console = NULL;
 static WORD console_attr_ori = 0;
 
