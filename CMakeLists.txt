@@ -146,13 +146,15 @@ find_package(RapidJSON CONFIG REQUIRED)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Create format target - BEFORE add_subdirectory(src)
-add_custom_target(format
-    COMMAND ${CMAKE_COMMAND} -E echo "Running reformat..."
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/reformat.sh
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Formatting source code..."
-)
+if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    # Create format target - BEFORE add_subdirectory(src)
+    add_custom_target(format
+        COMMAND ${CMAKE_COMMAND} -E echo "Running reformat..."
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/reformat.sh
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Formatting source code..."
+    )
+endif()
 
 # Add all the source subdirectories
 add_subdirectory(src)
