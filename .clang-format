@@ -22,7 +22,7 @@ KeepEmptyLinesAtTheStartOfBlocks: true
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
 PointerAlignment: Right
-SortIncludes: true
+SortIncludes: false
 SpaceAfterTemplateKeyword: false
 SpaceBeforeCpp11BracedList: false
 SpaceBeforeParens: false
