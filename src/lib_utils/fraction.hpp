@@ -83,7 +83,7 @@ struct Fraction {
   Fraction inverse() const { return Fraction(den, num); }
   static std::string to_string(const Fraction &v) {
     char buffer[128];
-    sprintf(buffer, "%lld/%lld", v.num, v.den);
+    sprintf(buffer, "%lld/%lld", (long long int)v.num, (long long int)v.den);
     return buffer;
   }
 
