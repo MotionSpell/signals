@@ -462,8 +462,8 @@ struct Rectifier : ModuleDynI {
             auto const inputData = safe_cast<const DataPcm>(data.data);
             auto const inSamples =
                   getSampleInterval(data.data->get<PresentationTime>().time, inputData->getPlaneSize());
-            printf("\t\t %lld - %lld  (%lld) [%lf]\n", inSamples.start, inSamples.stop,
-                  inSamples.stop - inSamples.start, data.creationTime / (double)IClock::Rate);
+            printf("\t\t %lld - %lld  (%lld) [%lf]\n", (long long int)inSamples.start, (long long int)inSamples.stop,
+                  (long long int)(inSamples.stop - inSamples.start), data.creationTime / (double)IClock::Rate);
           }
 
         fflush(stdout);
