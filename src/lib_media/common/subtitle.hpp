@@ -16,14 +16,16 @@ struct Page {
     std::string color = "#ffffff";
     std::string bgColor = "#000000c2"; // TTML BasicDE: black with an opacity of 76% and a transparency of 24%
 
-    // BasicDE: To leave space between the text in adjacent
-    // rows, the font size for double height is not 200% but 160%. The value of 125% for
-    // tts:lineHeight defines a line-height that is 125% of the computed font-size
+    // BasicDE: To leave space between the text in adjacent rows, the font size for
+    //          double height is not 200% but 160%. The value of 125% for tts:lineHeight
+    //          defines a line-height that is 125% of the computed font-size
+    // WebVTT:  ignored.
     bool doubleHeight = false;
 
     std::string fontFamily = "monospaceSansSerif"; // TTML BasicDE: "Verdana,Arial,Tiresias"
     std::string fontSize = "100%"; // TTML BasicDE: 160%
     std::string lineHeight = "100%"; // TTML BasicDE: 125%
+    std::string textAlign = "center";
 
     void merge(const Style &style) {
       Page::Style defaultStyle;
@@ -39,6 +41,8 @@ struct Page {
         fontSize = style.fontSize;
       if(style.lineHeight != defaultStyle.lineHeight)
         lineHeight = style.lineHeight;
+      if(style.textAlign != defaultStyle.textAlign)
+        textAlign = style.textAlign;
     }
   };
 

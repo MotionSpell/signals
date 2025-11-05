@@ -322,15 +322,35 @@ class SubtitleEncoder : public ModuleS {
                     page.toString())
                     .c_str());
 
+        // write timestamps
         auto const timecodeShow = timecodeToString(localStartTimeInMs);
         auto const timecodeHide = timecodeToString(localEndTimeInMs);
-        vtt << timecodeShow << " --> " << timecodeHide << "\n";
+        vtt << timecodeShow << " --> " << timecodeHide;
+        // ... and positioning
+        for(auto &line : page.lines) {
+          if(line.region.row == page.numRows - 1)
+            continue; // last line: let default formatting
 
+          const int origin = 5; // FIXME: assume a margin of 5% with an extent of 90%
+          vtt << " position:50" // FIXME: assume centered
+              << "% line:" << origin + line.region.row * (100 - 2 * origin) / page.numRows
+              << "% size:" << line.style.fontSize << " align:" << line.style.textAlign;
+          break;
+        }
+        vtt << "\n";
+
+        // add formatting if any
         for(auto &line : page.lines) {
           if(line.text.empty())
             continue;
 
-          vtt << line.text << "\n";
+          Page::Style defaultStyle;
+          if(line.style.color != defaultStyle.color || line.style.bgColor != defaultStyle.bgColor)
+            // Romain:
+            vtt << "<c." << /*"black"*/ /*rgba(0,0,0,0.5)"*/ line.style.color << "."
+                << /*"bg_red"*/ /*"rgba(1,0,0,0.5)"*/ line.style.bgColor << ">" << line.text << "</c>\n";
+          else
+            vtt << line.text << "\n";
         }
       }
 
@@ -376,7 +396,7 @@ class SubtitleEncoder : public ModuleS {
         Page pageOut;
         pageOut.showTimestamp = prevSplit;
         pageOut.hideTimestamp = nextSplit;
-        for(int row = ((isWebVTT || forceTtmlLegacy) ? pageOut.numRows - 1 : 0); row < pageOut.numRows; ++row) {
+        for(int row = ((isWebVTT || forceTtmlLegacy) ? pageOut.numRows - 1 : 0); row < pageOut.numRows - 9; ++row) {
           std::string line;
           line += "Lp ";
           line += std::to_string(row);

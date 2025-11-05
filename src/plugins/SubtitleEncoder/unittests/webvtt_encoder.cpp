@@ -46,7 +46,7 @@ X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
 
 00:00:00.000 --> 00:00:01.000
 toto
-titi
+<c.#ff0000.#000000c2>titi</c>
 
 )|",
         R"|(WEBVTT
@@ -54,7 +54,7 @@ X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
 
 00:00:01.000 --> 00:00:02.000
 toto
-titi
+<c.#ff0000.#000000c2>titi</c>
 
 )|"};
 
@@ -72,8 +72,9 @@ unittest("webvtt_encoder: segmentation and empty page") {
   auto m = loadModule("SubtitleEncoder", &NullHost, &cfg);
 
   Page page1{IClock::Rate * 0 / 1, IClock::Rate * 1 / 2, std::vector<Page::Line>({{"toto1"}})};
-  Page page2{IClock::Rate * 1 / 2, IClock::Rate * 3 / 4, std::vector<Page::Line>({{"toto2"}})};
-  Page page3{IClock::Rate * 3 / 4, IClock::Rate * 5 / 4, std::vector<Page::Line>({{"toto3"}})};
+  Page page2{IClock::Rate * 1 / 2, IClock::Rate * 3 / 4, std::vector<Page::Line>({{"toto2.1"}, {"toto2.2"}})};
+  Page page3{IClock::Rate * 3 / 4, IClock::Rate * 5 / 4,
+        std::vector<Page::Line>({{"toto3", {12, 40}, {"#ffffff", "#000000"}}})};
 
   auto makeData = [](Page &page, int64_t time) {
     auto data = std::make_shared<DataSubtitle>(0);
@@ -103,17 +104,18 @@ X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
 toto1
 
 00:00:00.500 --> 00:00:00.750
-toto2
+toto2.1
+toto2.2
 
-00:00:00.750 --> 00:00:01.000
-toto3
+00:00:00.750 --> 00:00:01.000 position:50% line:48% size:100% align:center
+<c.#ffffff.#000000>toto3</c>
 
 )|",
         R"|(WEBVTT
 X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
 
-00:00:01.000 --> 00:00:01.250
-toto3
+00:00:01.000 --> 00:00:01.250 position:50% line:48% size:100% align:center
+<c.#ffffff.#000000>toto3</c>
 
 )|",
         R"|(WEBVTT

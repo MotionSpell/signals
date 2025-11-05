@@ -102,7 +102,7 @@ class TTMLDecoder : public ModuleS {
           else if(attr.name == "ebutts:linePadding")
             m_host->log(Debug, format("Ignored attribute %s", attr.name).c_str());
           else if(attr.name == "tts:textAlign")
-            m_host->log(Debug, format("Ignored attribute %s", attr.name).c_str());
+            style.textAlign = attr.value;
           else
             m_host->log(Warning, format("Unknown attribute %s: please report to your vendor", attr.name).c_str());
         }
