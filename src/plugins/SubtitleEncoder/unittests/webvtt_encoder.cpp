@@ -44,17 +44,29 @@ unittest("webvtt_encoder") {
   std::vector<std::string> expectedWebVTT = {R"|(WEBVTT
 X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
 
+STYLE
+::cue {
+  color: #ffffff;
+  background-color: #000000c2;
+}
+
 00:00:00.000 --> 00:00:01.000
 toto
-<c.#ff0000.#000000c2>titi</c>
+titi
 
 )|",
         R"|(WEBVTT
 X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
 
+STYLE
+::cue {
+  color: #ffffff;
+  background-color: #000000c2;
+}
+
 00:00:01.000 --> 00:00:02.000
 toto
-<c.#ff0000.#000000c2>titi</c>
+titi
 
 )|"};
 
@@ -100,6 +112,12 @@ unittest("webvtt_encoder: segmentation and empty page") {
   std::vector<std::string> expectedWebVTT = {R"|(WEBVTT
 X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
 
+STYLE
+::cue {
+  color: #ffffff;
+  background-color: #000000c2;
+}
+
 00:00:00.000 --> 00:00:00.500
 toto1
 
@@ -108,18 +126,30 @@ toto2.1
 toto2.2
 
 00:00:00.750 --> 00:00:01.000 position:50% line:48% size:100% align:center
-<c.#ffffff.#000000>toto3</c>
+toto3
 
 )|",
         R"|(WEBVTT
 X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
+
+STYLE
+::cue {
+  color: #ffffff;
+  background-color: #000000;
+}
 
 00:00:01.000 --> 00:00:01.250 position:50% line:48% size:100% align:center
-<c.#ffffff.#000000>toto3</c>
+toto3
 
 )|",
         R"|(WEBVTT
 X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0
+
+STYLE
+::cue {
+  color: #ffffff;
+  background-color: #000000c2;
+}
 
 00:00:02.000 --> 00:00:03.000
 

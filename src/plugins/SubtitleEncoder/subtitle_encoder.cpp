@@ -313,8 +313,31 @@ class SubtitleEncoder : public ModuleS {
     vtt << "X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:0\n";
     vtt << "\n";
 
+    bool hasStyles = false;
+
     for(auto &page : currentPages) {
       if(isDisplayable(page, startTimeInMs, endTimeInMs)) {
+        if(!hasStyles) {
+          auto getStyle = [&page](Page::Style &style) -> bool {
+            for(auto &line : page.lines) {
+              style = line.style;
+              return true;
+            }
+            return false;
+          };
+
+          Page::Style style;
+          if(getStyle(style)) {
+            hasStyles = true;
+
+            vtt << "STYLE\n";
+            vtt << "::cue {\n";
+            vtt << "  color: " << style.color << ";\n";
+            vtt << "  background-color: " << style.bgColor << ";\n";
+            vtt << "}\n";
+            vtt << "\n";
+          }
+        }
         auto localStartTimeInMs = std::max<int64_t>(clockToTimescale(page.showTimestamp, 1000), startTimeInMs);
         auto localEndTimeInMs = std::min<int64_t>(clockToTimescale(page.hideTimestamp, 1000), endTimeInMs);
         m_host->log(Info,
@@ -346,9 +369,7 @@ class SubtitleEncoder : public ModuleS {
 
           Page::Style defaultStyle;
           if(line.style.color != defaultStyle.color || line.style.bgColor != defaultStyle.bgColor)
-            // Romain:
-            vtt << "<c." << /*"black"*/ /*rgba(0,0,0,0.5)"*/ line.style.color << "."
-                << /*"bg_red"*/ /*"rgba(1,0,0,0.5)"*/ line.style.bgColor << ">" << line.text << "</c>\n";
+            vtt << line.text << "\n";
           else
             vtt << line.text << "\n";
         }
@@ -396,7 +417,7 @@ class SubtitleEncoder : public ModuleS {
         Page pageOut;
         pageOut.showTimestamp = prevSplit;
         pageOut.hideTimestamp = nextSplit;
-        for(int row = ((isWebVTT || forceTtmlLegacy) ? pageOut.numRows - 1 : 0); row < pageOut.numRows - 9; ++row) {
+        for(int row = ((isWebVTT || forceTtmlLegacy) ? pageOut.numRows - 1 : 0); row < pageOut.numRows; ++row) {
           std::string line;
           line += "Lp ";
           line += std::to_string(row);
@@ -406,6 +427,7 @@ class SubtitleEncoder : public ModuleS {
 
           Page::Line pageline;
           pageline.text = line;
+          pageline.style.color = "#44ff44";
           pageline.region.row = row;
           pageOut.lines.push_back(pageline);
         }

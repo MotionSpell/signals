@@ -12,7 +12,7 @@ struct SubtitleEncoderConfig {
   };
 
   bool isWebVTT = false;
-  bool forceTtmlLegacy = false; // force to use the old TTML mode
+  bool forceTtmlLegacy = false; // force to use the old TTML mode // TODO: to deprecate
   bool forceEmptyPage = false; // use an empty page instead of no page
   std::string lang = "en";
   int splitDurationInMs = 1000;
