@@ -321,7 +321,7 @@ class SubtitleEncoder : public ModuleS {
           auto getStyle = [&page](Page::Style &style) -> bool {
             for(auto &line : page.lines) {
               style = line.style;
-              return true; //FIXME: only first style, other ones are ignored
+              return true; // FIXME: only first style, other ones are ignored
             }
             return false;
           };

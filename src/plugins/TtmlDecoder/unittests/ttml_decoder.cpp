@@ -65,8 +65,8 @@ unittest("ttml_decoder: ttml_encoder sample") {
         timescaleToClock(pageNum * encCfg.splitDurationInMs + encCfg.maxDelayBeforeEmptyInMs, 1000);
   Page pageSent{0, pageDurationIn180k,
         std::vector<Page::Line>(
-              {{"toto", {23}, {"#ffffff", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}},
-                    {"titi", {24}, {"#ff0000", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}}}),
+              {{"toto", {26, 22}, {"#ffffff", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}},
+                    {"titi", {27, 22}, {"#ff0000", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}}}),
         50, 30};
   auto data = std::make_shared<DataSubtitle>(0);
   auto const time = pageSent.showTimestamp + pageDurationIn180k;
@@ -98,7 +98,7 @@ unittest("ttml_decoder: ebu-tt-live (WDR sample)") {
         <tt:styling>
             <tt:style xml:id="defaultStyle" tts:fontFamily="Verdana,Arial,Tiresias" tts:fontSize="160%" tts:lineHeight="125%"/>
             <tt:style xml:id="textWhite" tts:color="#FFFFFF" tts:backgroundColor="#000000c2"/>
-			<tt:style xml:id="textCenter" tts:textAlign="center"/>
+            <tt:style xml:id="textCenter" tts:textAlign="center"/>
         </tt:styling>
         <tt:layout>
             <tt:region xml:id="bottom" tts:origin="10% 10%" tts:extent="80% 80%" tts:displayAlign="after"/>
@@ -121,9 +121,9 @@ unittest("ttml_decoder: ebu-tt-live (WDR sample)") {
   auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
   int received = 0;
   Page expected = {0, 60 * IClock::Rate,
-        {{"Sample of a EBU-TT-LIVE document - line 1", {23, 0},
+        {{"Sample of a EBU-TT-LIVE document - line 1", {26, 22},
                {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}},
-              {"Sample of a EBU-TT-LIVE document - line 2", {24, 0},
+              {"Sample of a EBU-TT-LIVE document - line 2", {27, 22},
                     {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}}},
         50, 30};
   ConnectOutput(dec->getOutput(0), [&](Data data) {
@@ -190,8 +190,8 @@ unittest("ttml_decoder: ebu-tt-live (EBU LIT User Input Producer sample)") {
   cfg.clock = zc;
   auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
   int received = 0;
-  Page expected = {
-        0, 10 * IClock::Rate, {{"nils is yo", {}, {"rgb(255, 255, 255)", "rgb(0, 0, 0)", false, "sansSerif"}}}, 32, 15};
+  Page expected = {0, 10 * IClock::Rate,
+        {{"nils is yo", {12, 13}, {"rgb(255, 255, 255)", "rgb(0, 0, 0)", false, "sansSerif"}}}, 32, 15};
   ConnectOutput(dec->getOutput(0), [&](Data data) {
     auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
     ASSERT_EQUALS(expected, pageReceived);
@@ -249,8 +249,8 @@ unittest("ttml_decoder: ebu-tt-live (BasicDE) styling") {
   auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
   int received = 0;
   Page expected = {0, 30 * IClock::Rate,
-        {{"A white sentence", {23}, {"#ffffff", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}},
-              {"in a two row subtitle", {},
+        {{"A white sentence", {26, 22}, {"#ffffff", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}},
+              {"in a two row subtitle", {27, 22},
                     {"#ff0000", "#000000c2", false, "Verdana, Arial, Tiresias", "160%", "125%"}}},
         50, 30};
   ConnectOutput(dec->getOutput(0), [&](Data data) {
@@ -361,10 +361,69 @@ unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR styling") {
   auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
   int received = 0;
   Page expected = {0, 30 * IClock::Rate,
-        {{"irgendwie so Ausrufezeichen", {23},
+        {{"irgendwie so Ausrufezeichen", {26, 22},
                {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}},
-              {"Motorradfahrer dass die haben noch so", {},
+              {"Motorradfahrer dass die haben noch so", {27, 22},
                     {"#FFFFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}}},
+        50, 30};
+  ConnectOutput(dec->getOutput(0), [&](Data data) {
+    auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
+    ASSERT_EQUALS(expected, pageReceived);
+    received++;
+  });
+
+  auto pkt = std::make_shared<DataRaw>(ttml.size());
+  memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
+  pkt->set(PresentationTime{1789});
+  dec->getInput(0)->push(pkt);
+
+  ASSERT_EQUALS(1, received);
+}
+
+unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR with top subtitle") {
+  std::string ttml = R"|(<?xml version="1.0" encoding="UTF-8"?>
+<tt:tt xmlns:tt="http://www.w3.org/ns/ttml"
+    xmlns:ttp="http://www.w3.org/ns/ttml#parameter"
+    xmlns:tts="http://www.w3.org/ns/ttml#styling"
+    xmlns:ebuttm="urn:ebu:tt:metadata"
+    xmlns:ebuttp="urn:ebu:tt:parameters"
+    xmlns:ebutts="urn:ebu:tt:style" xml:lang="de" ttp:cellResolution="50 30" ttp:timeBase="clock" ttp:clockMode="local" ebuttp:sequenceIdentifier="" ebuttp:sequenceNumber="1.763047308001e+12">
+    <tt:head>
+        <tt:metadata>
+            <ebuttm:documentMetadata>
+                <ebuttm:documentEbuttVersion>v1.0</ebuttm:documentEbuttVersion>
+            </ebuttm:documentMetadata>
+        </tt:metadata>
+        <tt:styling>
+            <tt:style xml:id="defaultStyle" tts:fontFamily="Verdana,Arial,Tiresias" tts:fontSize="160%" tts:lineHeight="125%"/>
+            <tt:style xml:id="textCyan" tts:color="#00FFFF" tts:backgroundColor="#000000c2"/>
+            <tt:style xml:id="alignRight" tts:textAlign="right"/>
+        </tt:styling>
+        <tt:layout>
+            <tt:region xml:id="top" tts:origin="10% 10%" tts:extent="80% 80%" tts:displayAlign="before"/>
+        </tt:layout>
+    </tt:head>
+    <tt:body dur="00:00:20.000">
+        <tt:div style="defaultStyle">
+            <tt:p xml:id="sub1" style="alignRight" region="top">
+                <tt:span style="textCyan">Großeinsätzen, in zwei Fällen schwamm</tt:span>
+                <tt:br/>
+                <tt:span style="textCyan">Männer in der Fahrrinne. Beide kamen aus</tt:span>
+            </tt:p>
+        </tt:div>
+    </tt:body>
+</tt:tt>)|";
+
+  TtmlDecoderConfig cfg;
+  auto zc = std::make_shared<ZeroClock>();
+  cfg.clock = zc;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
+  int received = 0;
+  Page expected = {0, 20 * IClock::Rate,
+        {{"Großeinsätzen, in zwei Fällen schwamm", {2, 5},
+               {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}},
+              {"Männer in der Fahrrinne. Beide kamen aus", {3, 5},
+                    {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}}},
         50, 30};
   ConnectOutput(dec->getOutput(0), [&](Data data) {
     auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;

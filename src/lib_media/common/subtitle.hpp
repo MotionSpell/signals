@@ -50,6 +50,11 @@ struct Page {
     // default values inherited from teletext
     int row = 24; // last line
     int col = 0;
+
+    // values inherited from TTML tts:origin and tts:extent and used to compute row and col
+    double originX = 0, originY = 0, extentX = 0, extentY = 0;
+
+    std::string displayAlign = "after";
   };
 
   struct Line {
@@ -65,6 +70,7 @@ struct Page {
     std::string r;
 
     for(auto &ss : lines) {
+      // TODO: add more to trace than text: r += format("row=%s col=%s text:\n", ss.region.row, ss.region.col);
       r += ss.text;
       if(&ss != &lines.back())
         r += "\n";

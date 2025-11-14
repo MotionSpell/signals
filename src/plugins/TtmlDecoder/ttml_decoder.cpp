@@ -11,6 +11,8 @@
 #include "lib_utils/tools.hpp" // enforce
 #include "lib_utils/xml.hpp"
 
+#include <cassert>
+
 using namespace Modules;
 
 namespace {
@@ -69,6 +71,7 @@ class TTMLDecoder : public ModuleS {
     int64_t pageMaxDuration = 30 * IClock::Rate; // default: 30s
     int numCols = 32, numRows = 15; // default in TTML
     SmallMap<std::string, Page::Style> styles;
+    SmallMap<std::string, Page::Region> regions;
 
     explore(document, [&](const Tag &tag) {
       if(tag.name == "tt" || tag.name == "tt:tt")
@@ -102,12 +105,72 @@ class TTMLDecoder : public ModuleS {
           else if(attr.name == "ebutts:linePadding")
             m_host->log(Debug, format("Ignored attribute %s", attr.name).c_str());
           else if(attr.name == "tts:textAlign")
-            style.textAlign = attr.value;
+            if(attr.value == "before" || attr.value == "after" || attr.value == "center") {
+              style.textAlign = attr.value;
+            } else if(attr.value == "justify" || attr.value == "start") {
+              m_host->log(Warning,
+                    format("Unsupported textAlign value \"%s\". Falling back to \"before\".", attr.value).c_str());
+              style.textAlign = "before";
+            } else if(attr.value == "end") {
+              m_host->log(Warning,
+                    format("Unsupported textAlign value \"%s\". Falling back to \"after\".", attr.value).c_str());
+              style.textAlign = "after";
+            } else {
+              m_host->log(Warning,
+                    format("Unknown textAlign value \"%s\": please check the specification and input document. Falling "
+                           "back to \"before\" as specification mandates.",
+                          attr.value)
+                          .c_str());
+              style.textAlign = "before";
+            }
           else
             m_host->log(Warning, format("Unknown attribute %s: please report to your vendor", attr.name).c_str());
         }
 
         styles[id] = style;
+      }
+
+      if(tag.name == "region" || tag.name == "tt:region") {
+        std::string id;
+        Page::Region region;
+
+        for(auto &attr : tag.attr) {
+          if(attr.name == "xml:id")
+            id = attr.value;
+          else if(attr.name == "tts:origin") {
+            int ret = sscanf(attr.value.c_str(), "%lf%% %lf%%", &region.originX, &region.originY);
+            if(ret != 2)
+              m_host->log(Warning,
+                    format("Incorrect parsing of attribute %s=\"%s\" into \"%d%% %d%%\" (%d elements parsed)",
+                          attr.name, attr.value, region.originX, region.originY, ret)
+                          .c_str());
+          } else if(attr.name == "tts:extent") {
+            int ret = sscanf(attr.value.c_str(), "%lf%% %lf%%", &region.extentX, &region.extentY);
+            if(ret != 2)
+              m_host->log(Warning,
+                    format("Incorrect parsing of attribute %s=\"%s\" into \"%d%% %d%%\" (%d elements parsed)",
+                          attr.name, attr.value, region.extentX, region.extentY, ret)
+                          .c_str());
+          } else if(attr.name == "tts:displayAlign") {
+            if(attr.value == "before" || attr.value == "after" || attr.value == "center") {
+              region.displayAlign = attr.value;
+            } else if(attr.value == "justify") {
+              m_host->log(Warning,
+                    format("Unsupported displayAlign value \"%s\". Falling back to \"center\".", attr.value).c_str());
+              region.displayAlign = "center";
+            } else {
+              m_host->log(Warning,
+                    format("Unknown displayAlign value \"%s\": please check the specification and input document. "
+                           "Falling back to \"before\" as specification mandates.",
+                          attr.value)
+                          .c_str());
+              region.displayAlign = "before";
+            }
+          } else
+            m_host->log(Warning, format("Unknown attribute %s: please report to your vendor", attr.name).c_str());
+        }
+
+        regions[id] = region;
       }
 
       if(tag.name == "body" || tag.name == "tt:body")
@@ -134,21 +197,23 @@ class TTMLDecoder : public ModuleS {
     explore(document, [&](const Tag &tag) {
       if(tag.name == "div" || tag.name == "tt:div") {
         Page::Style divStyle;
+        Page::Region pRegion;
+
         // find style
         for(auto &attr : tag.attr)
           if(attr.name == "style")
             divStyle = styles[attr.value];
+          else if(attr.name == "region")
+            pRegion = regions[attr.value];
 
         for(auto &tagDiv : tag.children) {
           if(tagDiv.name == "p" || tagDiv.name == "tt:p") {
             Page::Style pStyle = divStyle;
-            Page::Region pRegion;
             for(auto &attr : tagDiv.attr) {
               if(attr.name == "style")
                 pStyle.merge(styles[attr.value]);
-              // TODO: handle regions
-              // else if (attr.name == "region")
-              //	pStyle.color = regions[attr.value];
+              else if(attr.name == "region")
+                pRegion = regions[attr.value];
             }
 
             for(auto &tagP : tagDiv.children) {
@@ -164,9 +229,41 @@ class TTMLDecoder : public ModuleS {
                 line.region = pRegion;
                 line.style = spanStyle;
 
+                // compute vertical position from attributes
+                if(line.region.displayAlign == "before") {
+                  line.region.row = line.region.originY * page.numRows / 100;
+                } else if(line.region.displayAlign == "after") {
+                  line.region.row = (line.region.originY + line.region.extentY) * page.numRows / 100;
+                } else if(line.region.displayAlign == "center") {
+                  line.region.row = (line.region.originY + line.region.extentY) * page.numRows / 2 / 100;
+                } else
+                  assert(0);
+
+                // compute horizontal position in region from attached style
+                if(line.style.textAlign == "before")
+                  line.region.col = line.region.originX * page.numCols / 100;
+                else if(line.style.textAlign == "after")
+                  line.region.col = (line.region.originX + line.region.extentX) * page.numCols / 100;
+                else if(line.style.textAlign == "center")
+                  line.region.col = (line.region.originX + line.region.extentX) * page.numCols / 2 / 100;
+                else
+                  assert(0);
+
+                if(line.region.row >= numRows)
+                  line.region.row = numRows - 1;
+
                 // rectify layout to avoid overwrites
                 for(auto &line : page.lines)
                   line.region.row--;
+
+                // safety checks
+                if(line.region.col < 0)
+                  line.region.col = 0;
+                if(line.region.col >= numCols)
+                  line.region.col = numCols - 1;
+                if(line.region.row < 0)
+                  for(auto &line2 : page.lines)
+                    line2.region.row += -line.region.row;
 
                 line.text = tagP.content;
                 page.lines.push_back(line);

@@ -28,7 +28,8 @@ unittest("webvtt_encoder") {
   cfg.timingPolicy = SubtitleEncoderConfig::RelativeToMedia;
   auto m = loadModule("SubtitleEncoder", &NullHost, &cfg);
 
-  Page page{0, IClock::Rate * 4, std::vector<Page::Line>({{"toto"}, {"titi", {}, {"#ff0000"}}})}; //FIXME: second style is ignored
+  Page page{0, IClock::Rate * 4,
+        std::vector<Page::Line>({{"toto"}, {"titi", {}, {"#ff0000"}}})}; // FIXME: second style is ignored
   auto data = std::make_shared<DataSubtitle>(0);
   auto const time = page.showTimestamp + IClock::Rate * 4;
   data->set(DecodingTime{time});
