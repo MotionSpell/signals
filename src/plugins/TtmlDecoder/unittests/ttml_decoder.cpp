@@ -380,6 +380,65 @@ unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR styling") {
   ASSERT_EQUALS(1, received);
 }
 
+unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR with \"raisedBottom\" subtitle") {
+  std::string ttml = R"|(<?xml version="1.0" encoding="UTF-8"?>
+<tt:tt xmlns:tt="http://www.w3.org/ns/ttml"
+    xmlns:ttp="http://www.w3.org/ns/ttml#parameter"
+    xmlns:tts="http://www.w3.org/ns/ttml#styling"
+    xmlns:ebuttm="urn:ebu:tt:metadata"
+    xmlns:ebuttp="urn:ebu:tt:parameters"
+    xmlns:ebutts="urn:ebu:tt:style" xml:lang="de" ttp:cellResolution="50 30" ttp:timeBase="clock" ttp:clockMode="local" ebuttp:sequenceIdentifier="" ebuttp:sequenceNumber="1.763047308001e+12">
+    <tt:head>
+        <tt:metadata>
+            <ebuttm:documentMetadata>
+                <ebuttm:documentEbuttVersion>v1.0</ebuttm:documentEbuttVersion>
+            </ebuttm:documentMetadata>
+        </tt:metadata>
+        <tt:styling>
+            <tt:style xml:id="defaultStyle" tts:fontFamily="Verdana,Arial,Tiresias" tts:fontSize="160%" tts:lineHeight="125%"/>
+            <tt:style xml:id="textCyan" tts:color="#00FFFF" tts:backgroundColor="#000000c2"/>
+            <tt:style xml:id="alignRight" tts:textAlign="right"/>
+        </tt:styling>
+        <tt:layout>
+            <tt:region xml:id="raisedBottom" tts:origin="10% 60%" tts:extent="80% 30%" tts:displayAlign="before"/>
+        </tt:layout>
+    </tt:head>
+    <tt:body dur="00:00:20.000">
+        <tt:div style="defaultStyle">
+            <tt:p xml:id="sub1" style="alignRight" region="raisedBottom">
+                <tt:span style="textCyan">Großeinsätzen, in zwei Fällen schwamm</tt:span>
+                <tt:br/>
+                <tt:span style="textCyan">Männer in der Fahrrinne. Beide kamen aus</tt:span>
+            </tt:p>
+        </tt:div>
+    </tt:body>
+</tt:tt>)|";
+
+  TtmlDecoderConfig cfg;
+  auto zc = std::make_shared<ZeroClock>();
+  cfg.clock = zc;
+  auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
+  int received = 0;
+  Page expected = {0, 20 * IClock::Rate,
+        {{"Großeinsätzen, in zwei Fällen schwamm", {17, 5},
+               {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}},
+              {"Männer in der Fahrrinne. Beide kamen aus", {18, 5},
+                    {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}}},
+        50, 30};
+  ConnectOutput(dec->getOutput(0), [&](Data data) {
+    auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
+    ASSERT_EQUALS(expected, pageReceived);
+    received++;
+  });
+
+  auto pkt = std::make_shared<DataRaw>(ttml.size());
+  memcpy(pkt->buffer->data().ptr, ttml.data(), ttml.size());
+  pkt->set(PresentationTime{1789});
+  dec->getInput(0)->push(pkt);
+
+  ASSERT_EQUALS(1, received);
+}
+
 unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR with top subtitle") {
   std::string ttml = R"|(<?xml version="1.0" encoding="UTF-8"?>
 <tt:tt xmlns:tt="http://www.w3.org/ns/ttml"
