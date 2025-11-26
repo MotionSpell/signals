@@ -105,23 +105,27 @@ class TTMLDecoder : public ModuleS {
           else if(attr.name == "ebutts:linePadding")
             m_host->log(Debug, format("Ignored attribute %s", attr.name).c_str());
           else if(attr.name == "tts:textAlign")
-            if(attr.value == "before" || attr.value == "after" || attr.value == "center") {
+            if(attr.value == "left" || attr.value == "right" || attr.value == "center") {
               style.textAlign = attr.value;
+            } else if(attr.value == "before") {
+              style.textAlign = "left";
+            } else if(attr.value == "after") {
+              style.textAlign = "right";
             } else if(attr.value == "justify" || attr.value == "start") {
               m_host->log(Warning,
-                    format("Unsupported textAlign value \"%s\". Falling back to \"before\".", attr.value).c_str());
-              style.textAlign = "before";
+                    format("Unsupported textAlign value \"%s\". Falling back to \"left\".", attr.value).c_str());
+              style.textAlign = "left";
             } else if(attr.value == "end") {
               m_host->log(Warning,
-                    format("Unsupported textAlign value \"%s\". Falling back to \"after\".", attr.value).c_str());
-              style.textAlign = "after";
+                    format("Unsupported textAlign value \"%s\". Falling back to \"right\".", attr.value).c_str());
+              style.textAlign = "right";
             } else {
               m_host->log(Warning,
                     format("Unknown textAlign value \"%s\": please check the specification and input document. Falling "
-                           "back to \"before\" as specification mandates.",
+                           "back to \"left\" as specification mandates.",
                           attr.value)
                           .c_str());
-              style.textAlign = "before";
+              style.textAlign = "left";
             }
           else
             m_host->log(Warning, format("Unknown attribute %s: please report to your vendor", attr.name).c_str());
@@ -242,9 +246,9 @@ class TTMLDecoder : public ModuleS {
                   assert(0);
 
                 // compute horizontal position in region from attached style
-                if(line.style.textAlign == "before")
+                if(line.style.textAlign == "left")
                   line.region.col = line.region.originX * page.numCols / 100;
-                else if(line.style.textAlign == "after")
+                else if(line.style.textAlign == "right")
                   line.region.col = (line.region.originX + line.region.extentX) * page.numCols / 100;
                 else if(line.style.textAlign == "center")
                   line.region.col = (line.region.originX + line.region.extentX) * page.numCols / 2 / 100;

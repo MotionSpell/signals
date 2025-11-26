@@ -420,10 +420,10 @@ unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR with \"raisedBottom\" sub
   auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
   int received = 0;
   Page expected = {0, 20 * IClock::Rate,
-        {{"Großeinsätzen, in zwei Fällen schwamm", {17, 5},
-               {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}},
-              {"Männer in der Fahrrinne. Beide kamen aus", {18, 5},
-                    {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}}},
+        {{"Großeinsätzen, in zwei Fällen schwamm", {17, 45},
+               {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%", "right"}},
+              {"Männer in der Fahrrinne. Beide kamen aus", {18, 45},
+                    {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%", "right"}}},
         50, 30};
   ConnectOutput(dec->getOutput(0), [&](Data data) {
     auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
@@ -479,10 +479,10 @@ unittest("ttml_decoder: ebu-tt-live (BasicDE) from WDR with top subtitle") {
   auto dec = loadModule("TTMLDecoder", &NullHost, &cfg);
   int received = 0;
   Page expected = {0, 20 * IClock::Rate,
-        {{"Großeinsätzen, in zwei Fällen schwamm", {2, 5},
-               {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}},
-              {"Männer in der Fahrrinne. Beide kamen aus", {3, 5},
-                    {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%"}}},
+        {{"Großeinsätzen, in zwei Fällen schwamm", {2, 45},
+               {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%", "right"}},
+              {"Männer in der Fahrrinne. Beide kamen aus", {3, 45},
+                    {"#00FFFF", "#000000c2", false, "Verdana,Arial,Tiresias", "160%", "125%", "right"}}},
         50, 30};
   ConnectOutput(dec->getOutput(0), [&](Data data) {
     auto &pageReceived = safe_cast<const DataSubtitle>(data)->page;
