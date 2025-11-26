@@ -277,8 +277,15 @@ class SubtitleEncoder : public ModuleS {
       }
       ttml << "    </styling>\n";
       ttml << "    <layout>\n";
-      ttml << "      <region xml:id=\"Region0"
-           << "\" tts:origin=\"10% 10%\" tts:extent=\"80% 80%\" tts:displayAlign=\"after\" />\n";
+      for(auto &page : currentPages) {
+        if(!page.lines.empty()) {
+          auto const &line = page.lines.front();
+          ttml << "      <region xml:id=\"Region" << pageToRegionId[&page] << "\" tts:origin=\""
+               << (line.region.originOri.empty() ? "10% 10%" : line.region.originOri) << "\" tts:extent=\""
+               << (line.region.extentOri.empty() ? "80% 80%" : line.region.extentOri) << "\" tts:displayAlign=\""
+               << line.region.displayAlign << "\" />\n";
+        }
+      }
       ttml << "    </layout>\n";
       ttml << "  </head>\n";
       ttml << "  <body>\n";

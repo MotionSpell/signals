@@ -51,6 +51,7 @@ struct Page {
     int row = 24; // last line
     int col = 0;
 
+    std::string originOri = "", extentOri = "";
     // values inherited from TTML tts:origin and tts:extent and used to compute row and col
     double originX = 0, originY = 0, extentX = 0, extentY = 0;
 

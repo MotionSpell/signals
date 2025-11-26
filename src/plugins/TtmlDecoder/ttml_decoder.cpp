@@ -138,6 +138,7 @@ class TTMLDecoder : public ModuleS {
           if(attr.name == "xml:id")
             id = attr.value;
           else if(attr.name == "tts:origin") {
+            region.originOri = attr.value;
             int ret = sscanf(attr.value.c_str(), "%lf%% %lf%%", &region.originX, &region.originY);
             if(ret != 2)
               m_host->log(Warning,
@@ -145,6 +146,7 @@ class TTMLDecoder : public ModuleS {
                           attr.name, attr.value, region.originX, region.originY, ret)
                           .c_str());
           } else if(attr.name == "tts:extent") {
+            region.extentOri = attr.value;
             int ret = sscanf(attr.value.c_str(), "%lf%% %lf%%", &region.extentX, &region.extentY);
             if(ret != 2)
               m_host->log(Warning,
