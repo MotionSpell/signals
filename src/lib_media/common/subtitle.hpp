@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "lib_utils/format.hpp"
+
 namespace Modules {
 
 struct Page {
@@ -71,7 +73,9 @@ struct Page {
     std::string r;
 
     for(auto &ss : lines) {
-      // TODO: add more to trace than text: r += format("row=%s col=%s text:\n", ss.region.row, ss.region.col);
+      r += format("row=%s col=%s displayAlign=%s color=%s bg=%s textAlign=%s text:\n", ss.region.row, ss.region.col,
+            ss.region.displayAlign, ss.style.color, ss.style.bgColor, ss.style.textAlign);
+
       r += ss.text;
       if(&ss != &lines.back())
         r += "\n";
