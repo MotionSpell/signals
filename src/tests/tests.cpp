@@ -9,8 +9,6 @@
 #include <stdexcept>
 
 namespace {
-using TestFunction = void (*)();
-
 struct UnitTest {
   void (*fn)();
   std::string name;
@@ -83,10 +81,10 @@ void RunAll(Filter filter) {
     fp.read((char *)fuzzBuffer, sizeof fuzzBuffer);
     allTests()[filter.fuzzIdx].fn();
   } else {
-    auto const nTests = allTests().size(); // Apple clang version 16.0.0 error if placed in the loop
+    auto const nTests = allTests().size();
     for(int i = 0; i < (int)nTests; ++i) {
       if(matches(filter, i)) {
-        std::cout << "#" << i << ": " << allTests()[i].name << std::endl;
+        std::cout << "#" << i << "/" << nTests - 1 << ": " << allTests()[i].name << std::endl;
         allTests()[i].fn();
       }
     }
