@@ -61,7 +61,7 @@ struct RegulatorMulti : public ModuleDynI {
     if(!streams[id].init) {
       // Signal discontinuity
       auto discontinuityData = std::make_shared<DataRaw>(0);
-      CueFlags flags;
+      CueFlags flags{};
       flags.discontinuity = true;
       discontinuityData->set(flags);
       outputs[id]->post(discontinuityData);

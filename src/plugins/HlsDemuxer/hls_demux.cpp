@@ -68,6 +68,7 @@ class HlsDemuxer : public Module {
   };
 
   bool doProcess() {
+    string variantDirName;
     if(!m_hasPlaylist) {
       auto main = downloadPlaylist(m_playlistUrl);
       if(main.empty()) {
@@ -85,6 +86,7 @@ class HlsDemuxer : public Module {
 
       m_chunks = downloadPlaylist(subUrl);
       m_hasPlaylist = true;
+      variantDirName = dirName(subUrl);
     }
 
     if(m_chunks.empty()) {
@@ -93,7 +95,7 @@ class HlsDemuxer : public Module {
     }
 
     while(!m_chunks.empty()) {
-      auto const chunkUrl = m_dirName + m_chunks[0].url;
+      auto const chunkUrl = variantDirName + m_chunks[0].url;
       m_host->log(Debug, ("Process chunk: '" + chunkUrl + "'").c_str());
 
       // live mode: signal segments but only download the last one
@@ -103,7 +105,9 @@ class HlsDemuxer : public Module {
 
       auto data = m_output->allocData<DataRaw>(chunk.size());
       data->set(PresentationTime{m_chunks[0].timestamp});
-      data->set(CueFlags{});
+      CueFlags flags{};
+      flags.discontinuity = m_chunks[0].discontinuityNum;
+      data->set(flags);
       if(chunk.size())
         memcpy(data->buffer->data().ptr, chunk.data(), chunk.size());
       m_output->post(data);
@@ -118,7 +122,7 @@ class HlsDemuxer : public Module {
     auto contents = download(m_puller, url.c_str());
     vector<Entry> r;
     int64_t programDateTime = 0;
-    int segDur = 0, discNum = 1;
+    int segDur = 0, discNum = 0;
     m_live = true;
     string line;
     stringstream ss(string(contents.begin(), contents.end()));
@@ -131,8 +135,10 @@ class HlsDemuxer : public Module {
           programDateTime = fractionToClock(parseDate(line.substr(strlen("#EXT-X-PROGRAM-DATE-TIME:"))));
         else if(startsWith(line, "#EXT-X-TARGETDURATION:"))
           segDur = (int)(stof(line.substr(strlen("#EXT-X-TARGETDURATION:"))) * IClock::Rate);
-        else if(startsWith(line, "EXT-X-DISCONTINUITY-SEQUENCE:"))
+        else if(startsWith(line, "#EXT-X-DISCONTINUITY-SEQUENCE:")) {
           discNum = atoi(line.substr(strlen("#EXT-X-DISCONTINUITY-SEQUENCE:")).c_str());
+        } else if(startsWith(line, "#EXT-X-DISCONTINUITY"))
+          discNum++;
         else if(startsWith(line, "#EXTINF:"))
           segDur = (int)(stof(line.substr(strlen("#EXTINF:"))) * IClock::Rate);
         else if(startsWith(line, "#EXT-X-ENDLIST"))
