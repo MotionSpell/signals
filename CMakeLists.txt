@@ -154,18 +154,18 @@ if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Formatting source code..."
     )
+    # Make all targets depend on format
+    add_dependencies(utils format)
+    add_dependencies(modules format)
+    add_dependencies(appcommon format)
+    add_dependencies(pipeline format)
+    add_dependencies(media format)
+    add_dependencies(unittests format)
 endif()
 
 # Add all the source subdirectories
 add_subdirectory(src)
 
-# Make all targets depend on format
-add_dependencies(utils format)
-add_dependencies(modules format)
-add_dependencies(appcommon format)
-add_dependencies(pipeline format)
-add_dependencies(media format)
-add_dependencies(unittests format)
 
 # Add custom targets for easy builds - remove format from DEPENDS
 add_custom_target(build_all ALL
