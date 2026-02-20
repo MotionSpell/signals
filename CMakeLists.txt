@@ -146,6 +146,10 @@ find_package(RapidJSON CONFIG REQUIRED)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+
+# Add all the source subdirectories
+add_subdirectory(src)
+
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     # Create format target - BEFORE add_subdirectory(src)
     add_custom_target(format
@@ -162,9 +166,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     add_dependencies(media format)
     add_dependencies(unittests format)
 endif()
-
-# Add all the source subdirectories
-add_subdirectory(src)
 
 
 # Add custom targets for easy builds - remove format from DEPENDS
